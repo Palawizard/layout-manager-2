@@ -11,6 +11,10 @@
     "lint": "eslint .",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
+    "rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml",
+    "rust:fmt:check": "cargo fmt --manifest-path src-tauri/Cargo.toml --check",
+    "rust:clippy": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings",
+    "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml",
     "preview": "vite preview",
     "tauri": "tauri"
   },
