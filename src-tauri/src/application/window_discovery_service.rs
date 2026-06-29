@@ -144,7 +144,16 @@ pub fn wait_for_window(
             .iter()
             .filter(|candidate| !is_non_client_window(candidate.window))
             .collect();
-        let Some(candidate) = durable
+        let candidate_pool: Vec<_> = if post_launch && !previous_handles.is_empty() {
+            durable
+                .iter()
+                .copied()
+                .filter(|entry| !previous_handles.contains(&entry.window.handle))
+                .collect()
+        } else {
+            durable.iter().copied().collect()
+        };
+        let Some(candidate) = candidate_pool
             .iter()
             .max_by_key(|entry| window_area(entry.window))
             .map(|entry| entry.window)
@@ -179,7 +188,7 @@ pub fn wait_for_window(
         }
 
         let suspect = is_suspect_launch_candidate(candidate, matcher, &context);
-        let sole_match = durable.len() == 1;
+        let sole_match = candidate_pool.len() == 1;
 
         if tracked_handle == Some(candidate.handle) {
             if tracked_since.is_some_and(|started| started.elapsed() >= stable_duration) {
@@ -698,6 +707,156 @@ mod tests {
         )
         .expect("window appears");
         assert_eq!(found.handle, NativeWindowHandle(2));
+    }
+
+    #[test]
+    fn matches_child_process_windows_after_launch() {
+        struct TreeInventory {
+            window: DesktopWindow,
+        }
+
+        impl crate::domain::ports::WindowInventory for TreeInventory {
+            fn list_windows(
+                &self,
+            ) -> Result<Vec<DesktopWindow>, crate::domain::ports::NativeError> {
+                self.list_windows_including_untitled()
+            }
+
+            fn list_windows_including_untitled(
+                &self,
+            ) -> Result<Vec<DesktopWindow>, crate::domain::ports::NativeError> {
+                Ok(vec![self.window.clone()])
+            }
+
+            fn is_process_in_tree(&self, process_id: u32, ancestor_id: u32) -> bool {
+                process_id == 100 && ancestor_id == 50
+            }
+        }
+
+        let javaw = DesktopWindow {
+            handle: NativeWindowHandle(1),
+            process_id: 100,
+            executable_path: Some(
+                "C:\\Users\\super\\AppData\\Roaming\\casterlabs-caffeinated\\app\\jre\\bin\\javaw.exe"
+                    .to_owned(),
+            ),
+            process_name: Some("javaw.exe".to_owned()),
+            title: "Caffeinated".to_owned(),
+            class_name: "SunAwtFrame".to_owned(),
+            bounds: PixelBounds {
+                x: 0,
+                y: 0,
+                width: 1280,
+                height: 800,
+            },
+            state: WindowState::Normal,
+            monitor_id: None,
+        };
+        let inventory = TreeInventory {
+            window: javaw.clone(),
+        };
+        let matcher = WindowMatcher {
+            process_name: Some("Casterlabs-Caffeinated.exe".to_owned()),
+            class_name: Some("SunAwtFrame".to_owned()),
+            ..Default::default()
+        };
+
+        let found = wait_for_window(
+            &inventory,
+            &matcher,
+            &HashSet::new(),
+            Some(50),
+            Some("C:\\Users\\super\\AppData\\Roaming\\casterlabs-caffeinated\\app\\Casterlabs-Caffeinated.exe"),
+            2_000,
+            &NeverCancelled,
+        )
+        .expect("javaw window");
+        assert_eq!(found.handle, javaw.handle);
+    }
+
+    #[test]
+    fn waits_for_a_new_browser_window_instead_of_reusing_an_existing_one() {
+        struct PhasedInventory {
+            calls: std::sync::Mutex<usize>,
+            existing: DesktopWindow,
+            new_window: DesktopWindow,
+        }
+
+        impl crate::domain::ports::WindowInventory for PhasedInventory {
+            fn list_windows(
+                &self,
+            ) -> Result<Vec<DesktopWindow>, crate::domain::ports::NativeError> {
+                self.list_windows_including_untitled()
+            }
+
+            fn list_windows_including_untitled(
+                &self,
+            ) -> Result<Vec<DesktopWindow>, crate::domain::ports::NativeError> {
+                let mut calls = self.calls.lock().expect("calls");
+                *calls += 1;
+                if *calls < 3 {
+                    Ok(vec![self.existing.clone()])
+                } else {
+                    Ok(vec![self.existing.clone(), self.new_window.clone()])
+                }
+            }
+        }
+
+        let existing = DesktopWindow {
+            handle: NativeWindowHandle(1),
+            process_id: 42,
+            executable_path: Some("C:\\Program Files\\Mozilla Firefox\\firefox.exe".to_owned()),
+            process_name: Some("firefox.exe".to_owned()),
+            title: "Old dashboard".to_owned(),
+            class_name: "MozillaWindowClass".to_owned(),
+            bounds: PixelBounds {
+                x: 0,
+                y: 0,
+                width: 1920,
+                height: 1080,
+            },
+            state: WindowState::Normal,
+            monitor_id: None,
+        };
+        let new_window = DesktopWindow {
+            handle: NativeWindowHandle(2),
+            process_id: 42,
+            executable_path: Some("C:\\Program Files\\Mozilla Firefox\\firefox.exe".to_owned()),
+            process_name: Some("firefox.exe".to_owned()),
+            title: "Stream manager".to_owned(),
+            class_name: "MozillaWindowClass".to_owned(),
+            bounds: PixelBounds {
+                x: 0,
+                y: 0,
+                width: 1600,
+                height: 900,
+            },
+            state: WindowState::Normal,
+            monitor_id: None,
+        };
+        let inventory = PhasedInventory {
+            calls: std::sync::Mutex::new(0),
+            existing: existing.clone(),
+            new_window: new_window.clone(),
+        };
+        let matcher = WindowMatcher {
+            process_name: Some("firefox.exe".to_owned()),
+            class_name: Some("MozillaWindowClass".to_owned()),
+            ..Default::default()
+        };
+        let previous = HashSet::from([existing.handle]);
+
+        let found = wait_for_window(
+            &inventory,
+            &matcher,
+            &previous,
+            Some(42),
+            Some("C:\\Program Files\\Mozilla Firefox\\firefox.exe"),
+            5_000,
+            &NeverCancelled,
+        )
+        .expect("new browser window");
+        assert_eq!(found.handle, new_window.handle);
     }
 
     #[test]
