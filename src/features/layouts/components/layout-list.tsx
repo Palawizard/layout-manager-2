@@ -1,14 +1,23 @@
 import type { LayoutSummary } from "../types/layout";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent } from "../../../components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../../components/ui/dropdown-menu";
 import { formatDistanceToNow } from "../../../lib/utils/date";
+import { MoreHorizontal } from "lucide-react";
 
 interface LayoutListProps {
   layouts: LayoutSummary[];
   onEdit: (layoutId: string) => void;
+  onDuplicate: (layoutId: string) => void;
+  onDelete: (layoutId: string) => void;
 }
 
-export function LayoutList({ layouts, onEdit }: LayoutListProps) {
+export function LayoutList({ layouts, onDelete, onDuplicate, onEdit }: LayoutListProps) {
   return (
     <ul className="grid gap-4">
       {layouts.map((layout) => (
@@ -27,9 +36,26 @@ export function LayoutList({ layouts, onEdit }: LayoutListProps) {
                   {formatDistanceToNow(layout.updatedAt)}
                 </p>
               </div>
-              <Button onClick={() => onEdit(layout.id)} size="small" variant="secondary">
-                Modifier
-              </Button>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button onClick={() => onEdit(layout.id)} size="small" variant="secondary">
+                  Modifier
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button aria-label={`Actions pour ${layout.name}`} size="icon" variant="ghost">
+                      <MoreHorizontal aria-hidden="true" className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onDuplicate(layout.id)}>
+                      Dupliquer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDelete(layout.id)}>
+                      Supprimer
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </CardContent>
           </Card>
         </li>

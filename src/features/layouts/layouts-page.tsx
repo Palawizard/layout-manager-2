@@ -1,10 +1,18 @@
 import { LayoutDashboard, Plus, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
-import { listLayouts } from "../../lib/tauri/layouts";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "../../components/ui/dialog";
+import { deleteLayout, duplicateLayout, listLayouts } from "../../lib/tauri/layouts";
 import { LayoutList } from "./components/layout-list";
 import type { LayoutSummary } from "./types/layout";
 
@@ -12,6 +20,7 @@ export function LayoutsPage() {
   const navigate = useNavigate();
   const [layouts, setLayouts] = useState<LayoutSummary[]>([]);
   const [status, setStatus] = useState<"loading" | "idle" | "error">("loading");
+  const [pendingDelete, setPendingDelete] = useState<LayoutSummary | null>(null);
 
   const loadLayouts = useCallback(async () => {
     setStatus("loading");
@@ -24,8 +33,42 @@ export function LayoutsPage() {
   }, []);
 
   useEffect(() => {
-    void loadLayouts();
-  }, [loadLayouts]);
+    let active = true;
+    void listLayouts()
+      .then((data) => {
+        if (!active) return;
+        setLayouts(data);
+        setStatus("idle");
+      })
+      .catch(() => {
+        if (active) setStatus("error");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function handleDuplicate(layoutId: string) {
+    try {
+      const duplicate = await duplicateLayout(layoutId);
+      toast.success(`Layout dupliqué : ${duplicate.name}`);
+      await loadLayouts();
+    } catch {
+      toast.error("Impossible de dupliquer ce layout.");
+    }
+  }
+
+  async function handleDelete() {
+    if (!pendingDelete) return;
+    try {
+      await deleteLayout(pendingDelete.id);
+      toast.success("Layout supprimé.");
+      setPendingDelete(null);
+      await loadLayouts();
+    } catch {
+      toast.error("Impossible de supprimer ce layout.");
+    }
+  }
 
   return (
     <section aria-labelledby="layouts-title">
@@ -84,8 +127,37 @@ export function LayoutsPage() {
         </Card>
       )}
       {status === "idle" && layouts.length > 0 && (
-        <LayoutList layouts={layouts} onEdit={(layoutId) => navigate(`/layouts/${layoutId}`)} />
+        <LayoutList
+          layouts={layouts}
+          onDelete={(layoutId) =>
+            setPendingDelete(layouts.find((layout) => layout.id === layoutId) ?? null)
+          }
+          onDuplicate={(layoutId) => void handleDuplicate(layoutId)}
+          onEdit={(layoutId) => navigate(`/layouts/${layoutId}`)}
+        />
       )}
+
+      <Dialog
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        open={Boolean(pendingDelete)}
+      >
+        <DialogContent>
+          <DialogTitle>Supprimer ce layout ?</DialogTitle>
+          <DialogDescription>
+            {pendingDelete
+              ? `Le layout « ${pendingDelete.name} » sera définitivement supprimé.`
+              : ""}
+          </DialogDescription>
+          <div className="mt-6 flex justify-end gap-2">
+            <DialogClose asChild>
+              <Button variant="secondary">Annuler</Button>
+            </DialogClose>
+            <Button onClick={() => void handleDelete()} variant="danger">
+              Supprimer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

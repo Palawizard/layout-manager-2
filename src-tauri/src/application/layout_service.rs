@@ -7,7 +7,9 @@ use uuid::Uuid;
 
 use crate::{
     domain::{
-        layout::{Layout, LayoutAction, LayoutActionId, LayoutId, LayoutSummary, validate_executable_path},
+        layout::{
+            Layout, LayoutAction, LayoutActionId, LayoutId, LayoutSummary, validate_executable_path,
+        },
         ports::LayoutRepository,
     },
     error::AppError,
@@ -137,10 +139,7 @@ fn regenerate_action_id(action: LayoutAction) -> LayoutAction {
     }
 }
 
-fn unique_duplicate_name(
-    source_name: &str,
-    exists: impl Fn(&str) -> bool,
-) -> String {
+fn unique_duplicate_name(source_name: &str, exists: impl Fn(&str) -> bool) -> String {
     let base = format!("{source_name} (copie)");
     if !exists(&base) {
         return base;
@@ -166,11 +165,13 @@ mod tests {
     use super::LayoutService;
     use crate::{
         domain::{
-            layout::{Layout, LayoutAction, LayoutActionId, LayoutId, LayoutOptions, WindowPlacement},
+            layout::{
+                Layout, LayoutAction, LayoutActionId, LayoutId, LayoutOptions, WindowPlacement,
+            },
             monitor::{MonitorFallback, MonitorId, MonitorSelector},
             window::WindowMatcher,
         },
-        infrastructure::persistence::{open_in_memory_for_tests, SqliteLayoutRepository},
+        infrastructure::persistence::{SqliteLayoutRepository, open_in_memory_for_tests},
     };
     use uuid::Uuid;
 
@@ -210,9 +211,7 @@ mod tests {
     fn saves_duplicates_and_deletes_layouts() {
         let service = service();
         let saved = service.save(minimal_layout()).expect("save");
-        let duplicate = service
-            .duplicate(&saved.id)
-            .expect("duplicate");
+        let duplicate = service.duplicate(&saved.id).expect("duplicate");
         assert_eq!(duplicate.name, "Travail (copie)");
         assert_eq!(service.list_summaries().expect("list").len(), 2);
         service.delete(&duplicate.id).expect("delete");
