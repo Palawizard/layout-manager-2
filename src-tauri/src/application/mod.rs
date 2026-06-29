@@ -1,5 +1,9 @@
 pub mod execution_planner;
+pub mod execution_service;
 pub mod layout_service;
+pub mod placement_executor;
+pub mod unmatched_minimizer;
 pub mod window_discovery_service;
+pub mod window_reuse;
 pub mod window_matcher;
 pub mod window_service;
