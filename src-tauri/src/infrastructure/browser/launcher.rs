@@ -37,7 +37,9 @@ impl WindowsBrowserLauncher {
             ProcessLaunchRequest {
                 executable_path: executable_path.to_owned(),
                 arguments,
-                working_directory: None,
+                working_directory: crate::infrastructure::process::launch_working_directory(
+                    executable_path,
+                ),
             },
         )
     }
