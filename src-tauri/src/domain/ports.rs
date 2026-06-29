@@ -65,16 +65,6 @@ pub trait ProcessLauncher: Send + Sync {
     fn launch(&self, request: ProcessLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError>;
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BrowserLaunchRequest {
-    pub executable_path: String,
-    pub arguments: Vec<String>,
-}
-
-pub trait BrowserLauncher: Send + Sync {
-    fn launch(&self, request: BrowserLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError>;
-}
-
 pub trait LayoutRepository: Send + Sync {
     fn list_summaries(&self) -> Result<Vec<LayoutSummary>, AppError>;
     fn get(&self, id: &LayoutId) -> Result<Layout, AppError>;
