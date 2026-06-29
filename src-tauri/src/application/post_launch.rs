@@ -6,11 +6,7 @@ use crate::domain::window::WindowMatcher;
 /// (for example launching `steam.exe` while matching `steamwebhelper.exe`).
 #[must_use]
 pub fn is_indirect_launch(launched_executable: &str, matcher: &WindowMatcher) -> bool {
-    let Some(target) = matcher
-        .process_name
-        .as_deref()
-        .map(normalize_process_stem)
-    else {
+    let Some(target) = matcher.process_name.as_deref().map(normalize_process_stem) else {
         return false;
     };
     let launcher = normalize_process_stem(
@@ -53,6 +49,9 @@ mod tests {
             process_name: Some("Discord.exe".to_owned()),
             ..Default::default()
         };
-        assert!(!is_indirect_launch("C:\\Apps\\Discord\\Discord.exe", &matcher));
+        assert!(!is_indirect_launch(
+            "C:\\Apps\\Discord\\Discord.exe",
+            &matcher
+        ));
     }
 }

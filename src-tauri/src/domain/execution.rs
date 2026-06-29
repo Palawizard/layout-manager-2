@@ -101,7 +101,10 @@ mod tests {
 
     #[test]
     fn reports_success_when_every_action_succeeds() {
-        let results = vec![result(ActionRunStatus::Succeeded), result(ActionRunStatus::Succeeded)];
+        let results = vec![
+            result(ActionRunStatus::Succeeded),
+            result(ActionRunStatus::Succeeded),
+        ];
         assert_eq!(
             aggregate_run_status(&results, false),
             LayoutRunStatus::Success
@@ -122,7 +125,10 @@ mod tests {
 
     #[test]
     fn reports_failed_when_every_action_fails() {
-        let results = vec![result(ActionRunStatus::Failed), result(ActionRunStatus::Failed)];
+        let results = vec![
+            result(ActionRunStatus::Failed),
+            result(ActionRunStatus::Failed),
+        ];
         assert_eq!(
             aggregate_run_status(&results, false),
             LayoutRunStatus::Failed

@@ -95,8 +95,8 @@ fn open_connection(path: &Path) -> Result<Connection, AppError> {
         Err(error) => {
             tracing::warn!(path = %path.display(), %error, "database open failed, trying backup");
             restore_database_from_backup(path)?;
-            let connection = Connection::open(path)
-                .map_err(|error| AppError::Storage(error.to_string()))?;
+            let connection =
+                Connection::open(path).map_err(|error| AppError::Storage(error.to_string()))?;
             configure_connection(&connection)?;
             Ok(connection)
         }
@@ -161,7 +161,9 @@ pub(crate) fn open_in_memory_for_tests() -> Database {
 mod tests {
     use std::fs;
 
-    use super::{Database, backup_database_file, open_in_memory_for_tests, restore_database_from_backup};
+    use super::{
+        Database, backup_database_file, open_in_memory_for_tests, restore_database_from_backup,
+    };
     use crate::error::AppError;
 
     fn open_test_database() -> Database {

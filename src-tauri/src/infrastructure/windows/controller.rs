@@ -114,8 +114,7 @@ fn align_visible_bounds(window: HWND, target: PixelBounds) -> Result<(), NativeE
 fn outer_bounds(window: HWND) -> Result<PixelBounds, NativeError> {
     let mut rect = RECT::default();
     // SAFETY: `rect` is writable and the HWND was validated by the caller.
-    unsafe { GetWindowRect(window, &mut rect) }
-        .map_err(map_win32_error)?;
+    unsafe { GetWindowRect(window, &mut rect) }.map_err(map_win32_error)?;
     Ok(rect_to_bounds(rect))
 }
 

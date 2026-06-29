@@ -44,10 +44,10 @@ pub fn log_directory(app: &AppHandle) -> Result<PathBuf, Box<dyn std::error::Err
 }
 
 pub fn sanitize_for_log(value: &str) -> String {
-    if let Some((base, _query)) = value.split_once('?') {
-        if value.contains("://") {
-            return format!("{base}?…");
-        }
+    if let Some((base, _query)) = value.split_once('?')
+        && value.contains("://")
+    {
+        return format!("{base}?…");
     }
     if value.len() > 120 {
         return format!("{}…", &value[..120]);

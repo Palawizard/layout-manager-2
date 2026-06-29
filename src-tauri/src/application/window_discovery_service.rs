@@ -89,10 +89,10 @@ pub fn wait_for_window(
     timeout_ms: u32,
     cancellation: &impl CancellationCheck,
 ) -> Result<DesktopWindow, WaitError> {
-    let indirect_launch = launched_executable_path
-        .is_some_and(|path| is_indirect_launch(path, matcher));
+    let indirect_launch =
+        launched_executable_path.is_some_and(|path| is_indirect_launch(path, matcher));
     let effective_timeout_ms = if indirect_launch {
-        u64::from(timeout_ms).max(30_000).min(120_000) as u32
+        u64::from(timeout_ms).clamp(30_000, 120_000) as u32
     } else {
         timeout_ms
     };
@@ -151,7 +151,7 @@ pub fn wait_for_window(
                 .filter(|entry| !previous_handles.contains(&entry.window.handle))
                 .collect()
         } else {
-            durable.iter().copied().collect()
+            durable.to_vec()
         };
         let Some(candidate) = candidate_pool
             .iter()
@@ -191,13 +191,10 @@ pub fn wait_for_window(
         let sole_match = candidate_pool.len() == 1;
 
         if tracked_handle == Some(candidate.handle) {
-            if tracked_since.is_some_and(|started| started.elapsed() >= stable_duration) {
-                if !suspect
-                    || !sole_match
-                    || launch_started.elapsed() >= suspect_only_grace
-                {
-                    return Ok(candidate.clone());
-                }
+            if tracked_since.is_some_and(|started| started.elapsed() >= stable_duration)
+                && (!suspect || !sole_match || launch_started.elapsed() >= suspect_only_grace)
+            {
+                return Ok(candidate.clone());
             }
         } else {
             tracked_handle = Some(candidate.handle);
@@ -221,12 +218,13 @@ pub fn find_existing_window(
         Ok(window) => Ok(Some(window.clone())),
         Err(WindowMatchError::NotFound) => Ok(None),
         Err(WindowMatchError::Ambiguous) => Err(WaitError::Ambiguous),
-        Err(WindowMatchError::InstanceNotFound { requested, available }) => {
-            Err(WaitError::InstanceNotFound {
-                requested,
-                available,
-            })
-        }
+        Err(WindowMatchError::InstanceNotFound {
+            requested,
+            available,
+        }) => Err(WaitError::InstanceNotFound {
+            requested,
+            available,
+        }),
     }
 }
 
@@ -246,10 +244,10 @@ pub fn resolve_client_window_handle(
     let Ok(windows) = inventory.list_windows_including_untitled() else {
         return fallback;
     };
-    if let Some(current) = windows.iter().find(|window| window.handle == fallback) {
-        if is_placeable_client_window(current, matcher) {
-            return fallback;
-        }
+    if let Some(current) = windows.iter().find(|window| window.handle == fallback)
+        && is_placeable_client_window(current, matcher)
+    {
+        return fallback;
     }
     let context = MatchContext {
         process_hierarchy: Some(inventory),
@@ -265,13 +263,12 @@ mod tests {
     use super::{
         NeverCancelled, SharedCancellation, WaitError, find_existing_window, wait_for_window,
     };
-    use std::collections::HashSet;
     use crate::domain::{
         geometry::PixelBounds,
         ports::fakes::FakeWindowSystem,
         window::{DesktopWindow, NativeWindowHandle, WindowMatcher, WindowState},
     };
-
+    use std::collections::HashSet;
 
     fn window(handle: isize, pid: u32) -> DesktopWindow {
         DesktopWindow {
@@ -453,7 +450,9 @@ mod tests {
         let loading = DesktopWindow {
             handle: NativeWindowHandle(1),
             process_id: 10,
-            executable_path: Some("C:\\Apps\\Steam\\bin\\cef\\cef.win64\\steamwebhelper.exe".to_owned()),
+            executable_path: Some(
+                "C:\\Apps\\Steam\\bin\\cef\\cef.win64\\steamwebhelper.exe".to_owned(),
+            ),
             process_name: Some("steamwebhelper.exe".to_owned()),
             title: "Chargement de Steam...".to_owned(),
             class_name: "Chrome_WidgetWin_1".to_owned(),
@@ -469,7 +468,9 @@ mod tests {
         let durable = DesktopWindow {
             handle: NativeWindowHandle(2),
             process_id: 20,
-            executable_path: Some("C:\\Apps\\Steam\\bin\\cef\\cef.win64\\steamwebhelper.exe".to_owned()),
+            executable_path: Some(
+                "C:\\Apps\\Steam\\bin\\cef\\cef.win64\\steamwebhelper.exe".to_owned(),
+            ),
             process_name: Some("steamwebhelper.exe".to_owned()),
             title: "Steam".to_owned(),
             class_name: "Chrome_WidgetWin_1".to_owned(),

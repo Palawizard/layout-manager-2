@@ -80,8 +80,11 @@ mod tests {
         fs::create_dir_all(&root).expect("directory");
         let executable = root.join("Casterlabs-Caffeinated.exe");
         fs::write(&executable, "stub").expect("executable");
-        fs::write(&root.join("expect-updater"), executable.to_string_lossy().as_ref())
-            .expect("expect-updater");
+        fs::write(
+            root.join("expect-updater"),
+            executable.to_string_lossy().as_ref(),
+        )
+        .expect("expect-updater");
 
         let mut request = ProcessLaunchRequest {
             executable_path: executable.to_string_lossy().into_owned(),

@@ -1,8 +1,5 @@
 use crate::{
-    application::{
-        transient_window::is_transient_window,
-        window_matcher::MatchContext,
-    },
+    application::{transient_window::is_transient_window, window_matcher::MatchContext},
     domain::window::{DesktopWindow, WindowMatcher},
 };
 
@@ -46,8 +43,7 @@ mod tests {
     use super::{is_suspect_launch_candidate, window_area};
     use crate::{
         application::{
-            transient_title::has_transient_title,
-            transient_window::is_transient_window,
+            transient_title::has_transient_title, transient_window::is_transient_window,
             window_matcher::MatchContext,
         },
         domain::{

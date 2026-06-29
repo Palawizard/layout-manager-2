@@ -1,7 +1,6 @@
 use crate::{
     application::{
-        ancillary_panel_title::has_ancillary_panel_title,
-        durable_window::is_auxiliary_window,
+        ancillary_panel_title::has_ancillary_panel_title, durable_window::is_auxiliary_window,
         transient_window::is_transient_window,
     },
     domain::window::{DesktopWindow, WindowMatcher},

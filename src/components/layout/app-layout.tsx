@@ -11,7 +11,10 @@ const navigationItems = [
 export function AppLayout() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <a className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:font-medium" href="#main-content">
+      <a
+        className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:font-medium"
+        href="#main-content"
+      >
         Aller au contenu
       </a>
       <header className="border-b border-border bg-surface">

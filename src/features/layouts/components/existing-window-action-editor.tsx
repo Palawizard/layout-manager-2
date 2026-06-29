@@ -90,8 +90,8 @@ export function ExistingWindowActionEditor({ action, onChange }: ExistingWindowA
         <div>
           <Label htmlFor="skip-reopen-if-absent">Ne pas réouvrir si absente</Label>
           <p className="mt-1 text-sm text-muted-foreground">
-            Si l’application est fermée, elle sera relancée automatiquement avant le placement,
-            sauf si cette option est cochée.
+            Si l’application est fermée, elle sera relancée automatiquement avant le placement, sauf
+            si cette option est cochée.
           </p>
         </div>
       </div>

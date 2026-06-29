@@ -23,13 +23,18 @@ const browserLabels: Record<BrowserKind, string> = {
 
 function useStableRowKeys(count: number): string[] {
   const keysRef = useRef<string[]>([]);
-  while (keysRef.current.length < count) {
-    keysRef.current.push(crypto.randomUUID());
-  }
-  if (keysRef.current.length > count) {
-    keysRef.current.length = count;
-  }
-  return keysRef.current;
+  const [keys, setKeys] = useState<string[]>([]);
+
+  useEffect(() => {
+    const next = keysRef.current.slice(0, count);
+    while (next.length < count) {
+      next.push(crypto.randomUUID());
+    }
+    keysRef.current = next;
+    setKeys(next);
+  }, [count]);
+
+  return keys;
 }
 
 export function BrowserActionEditor({ action, onChange }: BrowserActionEditorProps) {

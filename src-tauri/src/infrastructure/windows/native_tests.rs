@@ -65,14 +65,16 @@ fn inspect_steam_windows() {
     let steam: Vec<_> = windows
         .into_iter()
         .filter(|window| {
-            window
-                .process_name
-                .as_deref()
-                .is_some_and(|name| name.eq_ignore_ascii_case("steam.exe")
-                    || name.eq_ignore_ascii_case("steamwebhelper.exe"))
+            window.process_name.as_deref().is_some_and(|name| {
+                name.eq_ignore_ascii_case("steam.exe")
+                    || name.eq_ignore_ascii_case("steamwebhelper.exe")
+            })
         })
         .collect();
-    eprintln!("Steam-related windows visible to the app ({}):", steam.len());
+    eprintln!(
+        "Steam-related windows visible to the app ({}):",
+        steam.len()
+    );
     for window in &steam {
         eprintln!(
             "  handle={} pid={} class={} title={:?} {}x{} @({},{}) state={:?}",

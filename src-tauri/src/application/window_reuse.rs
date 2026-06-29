@@ -31,10 +31,7 @@ pub fn try_reuse_application_window(
 }
 
 #[must_use]
-pub fn browser_window_matcher(
-    kind: BrowserKind,
-    executable_path: &str,
-) -> WindowMatcher {
+pub fn browser_window_matcher(kind: BrowserKind, executable_path: &str) -> WindowMatcher {
     let process_name = std::path::Path::new(executable_path)
         .file_name()
         .and_then(|name| name.to_str())
@@ -111,8 +108,7 @@ mod tests {
             process_name: Some("editor.exe".to_owned()),
             ..Default::default()
         };
-        let decision =
-            try_reuse_application_window(&system, &matcher, true).expect("decision");
+        let decision = try_reuse_application_window(&system, &matcher, true).expect("decision");
         assert!(decision.reused);
         assert_eq!(decision.window, Some(existing));
     }

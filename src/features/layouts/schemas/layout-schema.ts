@@ -37,33 +37,35 @@ const layoutActionSchema = z.discriminatedUnion("kind", [
     placement: windowPlacementSchema,
     startupTimeoutMs: z.number().int().min(1000).max(120_000),
   }),
-  z.object({
-    kind: z.literal("place_existing_window"),
-    id: z.string().min(1),
-    windowMatcher: windowMatcherSchema.refine(
-      (matcher) =>
-        Boolean(
-          matcher.executablePath ||
-          matcher.processName ||
-          matcher.className ||
-          matcher.titlePattern,
-        ),
-      { message: "Sélectionnez une fenêtre à retrouver." },
-    ),
-    placement: windowPlacementSchema,
-    capturedPlacement: windowPlacementSchema.optional(),
-    executablePath: z.string().nullable(),
-    reopenIfAbsent: z.boolean(),
-    startupTimeoutMs: z.number().int().min(1000).max(120_000),
-  }).superRefine((action, context) => {
-    if (action.reopenIfAbsent && !action.executablePath) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Choisissez une fenêtre pour enregistrer l’application à relancer.",
-        path: ["windowMatcher"],
-      });
-    }
-  }),
+  z
+    .object({
+      kind: z.literal("place_existing_window"),
+      id: z.string().min(1),
+      windowMatcher: windowMatcherSchema.refine(
+        (matcher) =>
+          Boolean(
+            matcher.executablePath ||
+            matcher.processName ||
+            matcher.className ||
+            matcher.titlePattern,
+          ),
+        { message: "Sélectionnez une fenêtre à retrouver." },
+      ),
+      placement: windowPlacementSchema,
+      capturedPlacement: windowPlacementSchema.optional(),
+      executablePath: z.string().nullable(),
+      reopenIfAbsent: z.boolean(),
+      startupTimeoutMs: z.number().int().min(1000).max(120_000),
+    })
+    .superRefine((action, context) => {
+      if (action.reopenIfAbsent && !action.executablePath) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Choisissez une fenêtre pour enregistrer l’application à relancer.",
+          path: ["windowMatcher"],
+        });
+      }
+    }),
   z.object({
     kind: z.literal("open_browser_window"),
     id: z.string().min(1),

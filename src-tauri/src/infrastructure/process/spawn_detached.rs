@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 use std::ffi::OsStr;
 use std::mem::size_of;
 use std::os::windows::ffi::OsStrExt;
@@ -12,9 +14,9 @@ use super::launch_executable::launch_working_directory;
 use windows::Win32::Foundation::{CloseHandle, HANDLE};
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Threading::{
-    CreateProcessW, GetProcessId, PROCESS_CREATION_FLAGS, PROCESS_INFORMATION, STARTUPINFOW,
-    CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_PROCESS_GROUP, CREATE_NO_WINDOW, CREATE_UNICODE_ENVIRONMENT,
-    DETACHED_PROCESS, STARTF_USESTDHANDLES,
+    CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_PROCESS_GROUP, CREATE_NO_WINDOW,
+    CREATE_UNICODE_ENVIRONMENT, CreateProcessW, DETACHED_PROCESS, GetProcessId,
+    PROCESS_CREATION_FLAGS, PROCESS_INFORMATION, STARTF_USESTDHANDLES, STARTUPINFOW,
 };
 #[cfg(target_os = "windows")]
 use windows::core::PWSTR;
@@ -27,7 +29,9 @@ const DETACHED_CREATION_FLAGS: PROCESS_CREATION_FLAGS = PROCESS_CREATION_FLAGS(
         | CREATE_NO_WINDOW.0,
 );
 
-pub fn spawn_detached(request: ProcessLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError> {
+pub fn spawn_detached(
+    request: ProcessLaunchRequest,
+) -> Result<LaunchedProcess, ProcessLaunchError> {
     let request = normalize_launch_request(request);
     if !std::path::Path::new(&request.executable_path).is_file() {
         return Err(ProcessLaunchError::ExecutableNotFound);
@@ -138,7 +142,9 @@ fn spawn_create_process(
 #[cfg(target_os = "windows")]
 fn spawn_via_shell_execute(request: &ProcessLaunchRequest) -> Result<u32, ProcessLaunchError> {
     use windows::{
-        Win32::UI::Shell::{SEE_MASK_FLAG_NO_UI, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW, ShellExecuteExW},
+        Win32::UI::Shell::{
+            SEE_MASK_FLAG_NO_UI, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW, ShellExecuteExW,
+        },
         Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL,
         core::PCWSTR,
     };
@@ -164,7 +170,7 @@ fn spawn_via_shell_execute(request: &ProcessLaunchRequest) -> Result<u32, Proces
         lpDirectory: directory
             .as_ref()
             .map_or(PCWSTR::null(), |value| PCWSTR(value.as_ptr())),
-        nShow: SW_SHOWNORMAL.0 as i32,
+        nShow: SW_SHOWNORMAL.0,
         ..Default::default()
     };
 

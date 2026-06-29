@@ -6,9 +6,9 @@ use windows::{
         Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute},
         System::Threading::GetCurrentProcessId,
         UI::WindowsAndMessaging::{
-            EnumWindows, GetClassNameW, GetWindowLongPtrW, GetWindowRect, GetWindowTextLengthW,
-            GetWindowTextW, GetWindowThreadProcessId, GWL_EXSTYLE, IsIconic, IsWindowVisible,
-            IsZoomed,
+            EnumWindows, GWL_EXSTYLE, GetClassNameW, GetWindowLongPtrW, GetWindowRect,
+            GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, IsIconic,
+            IsWindowVisible, IsZoomed,
         },
     },
     core::BOOL,
@@ -17,8 +17,7 @@ use windows::{
 use super::{Win32WindowSystem, monitors::monitor_id_from_window, process::process_metadata};
 use crate::{
     application::{
-        ancillary_panel_title::has_ancillary_panel_title,
-        durable_window::is_auxiliary_window,
+        ancillary_panel_title::has_ancillary_panel_title, durable_window::is_auxiliary_window,
     },
     domain::{
         geometry::PixelBounds,

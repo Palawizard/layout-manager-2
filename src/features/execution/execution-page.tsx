@@ -107,10 +107,7 @@ function ExecutionRunner({ layoutId, retryIds }: ExecutionRunnerProps) {
         await runLayout(layoutId, retryIds ?? undefined);
       } catch (error) {
         if (!disposed) {
-          const message = readPublicErrorMessage(
-            error,
-            "Impossible de lancer ce layout.",
-          );
+          const message = readPublicErrorMessage(error, "Impossible de lancer ce layout.");
           setErrorMessage(message);
           setStatus("error");
           toast.error(message);
@@ -162,7 +159,12 @@ function ExecutionRunner({ layoutId, retryIds }: ExecutionRunnerProps) {
       <p className="text-sm text-muted-foreground">{layoutName}</p>
       <Card>
         <CardContent className="space-y-4 p-6">
-          <div aria-atomic="true" aria-live="polite" className="flex items-center justify-between gap-4" role="status">
+          <div
+            aria-atomic="true"
+            aria-live="polite"
+            className="flex items-center justify-between gap-4"
+            role="status"
+          >
             <p className="text-sm font-medium">
               {report
                 ? describeRunStatus(report.status)

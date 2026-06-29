@@ -20,9 +20,7 @@ impl WindowsBrowserLauncher {
         profile: Option<&str>,
     ) -> Result<LaunchedProcess, ProcessLaunchError> {
         if urls.is_empty() {
-            return Err(ProcessLaunchError::LaunchFailed(
-                "missing url".to_owned(),
-            ));
+            return Err(ProcessLaunchError::LaunchFailed("missing url".to_owned()));
         }
 
         let arguments = if kind == BrowserKind::SystemDefault {
@@ -55,10 +53,7 @@ impl WindowsBrowserLauncher {
 }
 
 impl ProcessLauncher for WindowsBrowserLauncher {
-    fn launch(
-        &self,
-        request: ProcessLaunchRequest,
-    ) -> Result<LaunchedProcess, ProcessLaunchError> {
+    fn launch(&self, request: ProcessLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError> {
         spawn_detached(request)
     }
 }
@@ -67,8 +62,7 @@ impl ProcessLauncher for WindowsBrowserLauncher {
 mod tests {
     use super::WindowsBrowserLauncher;
     use crate::{
-        domain::layout::BrowserKind,
-        infrastructure::browser::arguments::build_browser_arguments,
+        domain::layout::BrowserKind, infrastructure::browser::arguments::build_browser_arguments,
     };
 
     #[test]

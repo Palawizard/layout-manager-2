@@ -1,9 +1,8 @@
 use crate::{
-    application::{
-        client_window::is_placeable_client_window,
-        window_service::apply_window_placement,
-    },
     application::execution_planner::PlannedLaunch,
+    application::{
+        client_window::is_placeable_client_window, window_service::apply_window_placement,
+    },
     domain::{
         execution::{ActionRunResult, ActionRunStatus},
         ports::{NativeError, WindowController, WindowInventory},
@@ -23,25 +22,27 @@ pub fn apply_planned_placement(
     let label = step.label().to_owned();
     if let Some(matcher) = step.window_matcher() {
         let Ok(windows) = inventory.list_windows_including_untitled() else {
-            return failed_placement(action_id, label, reused, "Impossible d’inspecter les fenêtres.");
+            return failed_placement(
+                action_id,
+                label,
+                reused,
+                "Impossible d’inspecter les fenêtres.",
+            );
         };
-        if let Some(window) = windows.iter().find(|window| window.handle == handle) {
-            if !is_placeable_client_window(window, matcher) {
-                return failed_placement(
-                    action_id,
-                    label,
-                    reused,
-                    "Fenêtre auxiliaire ignorée pour le placement.",
-                );
-            }
+        if let Some(window) = windows.iter().find(|window| window.handle == handle)
+            && !is_placeable_client_window(window, matcher)
+        {
+            return failed_placement(
+                action_id,
+                label,
+                reused,
+                "Fenêtre auxiliaire ignorée pour le placement.",
+            );
         }
     }
-    if let Err(error) = apply_window_placement(
-        controller,
-        handle,
-        placement.bounds,
-        placement.state,
-    ) {
+    if let Err(error) =
+        apply_window_placement(controller, handle, placement.bounds, placement.state)
+    {
         return ActionRunResult {
             action_id,
             label,

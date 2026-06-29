@@ -43,10 +43,7 @@ pub fn resolve_launch_executable(executable_path: &str) -> String {
 /// Recovers a launch executable from a stored path, including legacy values that
 /// incorrectly pointed at resource files (.pak, .dll, …) instead of the process binary.
 #[must_use]
-pub fn recover_launch_executable(
-    stored_path: &str,
-    process_name: Option<&str>,
-) -> String {
+pub fn recover_launch_executable(stored_path: &str, process_name: Option<&str>) -> String {
     let trimmed = stored_path.trim();
     if is_windows_executable(Path::new(trimmed)) {
         return resolve_launch_executable(trimmed);
@@ -126,10 +123,10 @@ fn resolve_from_helper_suffix_in_directory(
         if base.len() < 2 {
             continue;
         }
-        if let Some(candidate) = find_exe_with_stem(directory, base) {
-            if candidate != source_executable {
-                return Some(candidate);
-            }
+        if let Some(candidate) = find_exe_with_stem(directory, base)
+            && candidate != source_executable
+        {
+            return Some(candidate);
         }
     }
     None
@@ -324,10 +321,13 @@ mod tests {
 
     #[test]
     fn ignores_non_executable_resources_in_the_same_folder() {
-        let install = temp_install_in("cef.win64", &[
-            ("steamwebhelper.exe", "helper"),
-            ("chrome_100_percent.pak", "pak"),
-        ]);
+        let install = temp_install_in(
+            "cef.win64",
+            &[
+                ("steamwebhelper.exe", "helper"),
+                ("chrome_100_percent.pak", "pak"),
+            ],
+        );
         assert_eq!(
             resolve_launch_executable(&install.join("steamwebhelper.exe").to_string_lossy()),
             install.join("steamwebhelper.exe").to_string_lossy()
@@ -351,7 +351,9 @@ mod tests {
         assert!(!is_windows_executable(Path::new(
             "C:\\Apps\\Steam\\chrome_100_percent.pak"
         )));
-        assert!(is_windows_executable(Path::new("C:\\Apps\\Steam\\steam.exe")));
+        assert!(is_windows_executable(Path::new(
+            "C:\\Apps\\Steam\\steam.exe"
+        )));
     }
 
     #[test]

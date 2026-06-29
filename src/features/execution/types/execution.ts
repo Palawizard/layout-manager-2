@@ -1,12 +1,7 @@
 export type LayoutRunStatus = "success" | "partial_failure" | "failed" | "cancelled";
 
 export type ActionRunStatus =
-  | "pending"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "skipped"
-  | "cancelled";
+  "pending" | "running" | "succeeded" | "failed" | "skipped" | "cancelled";
 
 export interface RunWarning {
   code: string;

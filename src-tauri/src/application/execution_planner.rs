@@ -114,7 +114,10 @@ pub enum PlanError {
     NoMonitor,
 }
 
-pub fn build_execution_plan(layout: &Layout, monitors: &[Monitor]) -> Result<ExecutionPlan, PlanError> {
+pub fn build_execution_plan(
+    layout: &Layout,
+    monitors: &[Monitor],
+) -> Result<ExecutionPlan, PlanError> {
     layout
         .validate(true)
         .map_err(|error| PlanError::Validation(error.to_string()))?;
@@ -251,9 +254,7 @@ fn resolve_placement(
     let MonitorSelection {
         monitor,
         used_fallback,
-    } = selector
-        .resolve(monitors)
-        .ok_or(PlanError::NoMonitor)?;
+    } = selector.resolve(monitors).ok_or(PlanError::NoMonitor)?;
     if used_fallback {
         warnings.push(RunWarning {
             code: "monitor_fallback".to_owned(),
@@ -283,7 +284,9 @@ fn human_label_from_matcher(matcher: &WindowMatcher) -> String {
         .process_name
         .as_deref()
         .or(matcher.executable_path.as_deref().and_then(|path| {
-            std::path::Path::new(path).file_stem().and_then(|name| name.to_str())
+            std::path::Path::new(path)
+                .file_stem()
+                .and_then(|name| name.to_str())
         }))
         .unwrap_or("Fenêtre")
         .trim_end_matches(".exe")

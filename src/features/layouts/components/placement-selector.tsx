@@ -29,11 +29,7 @@ const windowStateLabels: Record<WindowState, string> = {
 
 const CAPTURED_PLACEMENT_LABEL = "Position actuelle";
 
-export function PlacementSelector({
-  capturedPlacement,
-  onChange,
-  value,
-}: PlacementSelectorProps) {
+export function PlacementSelector({ capturedPlacement, onChange, value }: PlacementSelectorProps) {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const isCapturedSelected = useMemo(
     () => Boolean(capturedPlacement && placementsMatch(value, capturedPlacement)),
@@ -68,7 +64,7 @@ export function PlacementSelector({
       return;
     }
     const preferred = monitors.find((monitor) => monitor.isPrimary) ?? monitors[0];
-    if (preferred.id === preferredMonitorId) {
+    if (!preferred || preferred.id === preferredMonitorId) {
       return;
     }
     onChange({

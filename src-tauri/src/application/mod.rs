@@ -11,6 +11,6 @@ pub mod transient_title;
 pub mod transient_window;
 pub mod unmatched_minimizer;
 pub mod window_discovery_service;
-pub mod window_reuse;
 pub mod window_matcher;
+pub mod window_reuse;
 pub mod window_service;

@@ -6,7 +6,10 @@ use super::spawn_detached::spawn_detached;
 pub struct WindowsProcessLauncher;
 
 impl ProcessLauncher for WindowsProcessLauncher {
-    fn launch(&self, request: ProcessLaunchRequest) -> Result<crate::domain::ports::LaunchedProcess, ProcessLaunchError> {
+    fn launch(
+        &self,
+        request: ProcessLaunchRequest,
+    ) -> Result<crate::domain::ports::LaunchedProcess, ProcessLaunchError> {
         spawn_detached(request)
     }
 }

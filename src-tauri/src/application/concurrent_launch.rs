@@ -78,7 +78,6 @@ mod tests {
             peak.fetch_max(current, Ordering::SeqCst);
             std::thread::sleep(Duration::from_millis(20));
             active.fetch_sub(1, Ordering::SeqCst);
-            ()
         });
 
         assert!(peak.load(Ordering::SeqCst) <= MAX_CONCURRENT_LAUNCHES);

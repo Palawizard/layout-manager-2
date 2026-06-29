@@ -59,6 +59,9 @@ export function placementFromWindow(
     monitors.find((item) => containsPoint(item.workArea, center.x, center.y)) ??
     monitors.find((item) => item.isPrimary) ??
     monitors[0];
+  if (!monitor) {
+    return null;
+  }
 
   const { workArea } = monitor;
   if (workArea.width <= 0 || workArea.height <= 0) {

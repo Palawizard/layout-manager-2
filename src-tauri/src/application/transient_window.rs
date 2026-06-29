@@ -1,7 +1,4 @@
-use crate::{
-    application::transient_title::has_transient_title,
-    domain::window::DesktopWindow,
-};
+use crate::{application::transient_title::has_transient_title, domain::window::DesktopWindow};
 
 const TRANSIENT_WINDOW_CLASSES: &[&str] = &[
     "BootstrapUpdateUIClass",

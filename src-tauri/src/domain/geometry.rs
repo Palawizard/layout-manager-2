@@ -36,14 +36,10 @@ impl NormalizedBounds {
 
     #[must_use]
     pub fn to_pixels(self, work_area: WorkArea) -> PixelBounds {
-        let left_edge =
-            work_area.x as f64 + self.x * f64::from(work_area.width);
-        let top_edge =
-            work_area.y as f64 + self.y * f64::from(work_area.height);
-        let right_edge = work_area.x as f64
-            + (self.x + self.width) * f64::from(work_area.width);
-        let bottom_edge = work_area.y as f64
-            + (self.y + self.height) * f64::from(work_area.height);
+        let left_edge = work_area.x as f64 + self.x * f64::from(work_area.width);
+        let top_edge = work_area.y as f64 + self.y * f64::from(work_area.height);
+        let right_edge = work_area.x as f64 + (self.x + self.width) * f64::from(work_area.width);
+        let bottom_edge = work_area.y as f64 + (self.y + self.height) * f64::from(work_area.height);
 
         let left = left_edge.round() as i32;
         let top = top_edge.round() as i32;
@@ -132,10 +128,7 @@ mod tests {
 
         assert_eq!(left_pixels.x, 0);
         assert_eq!(right_pixels.x, left_pixels.x + left_pixels.width);
-        assert_eq!(
-            right_pixels.x + right_pixels.width,
-            area.x + area.width
-        );
+        assert_eq!(right_pixels.x + right_pixels.width, area.x + area.width);
     }
 
     #[test]
@@ -206,14 +199,8 @@ mod tests {
         };
         let preset = NormalizedBounds::new(0.0, 0.0, 1.0, 1.0).expect("full screen");
 
-        assert_eq!(
-            preset.to_pixels(primary).height,
-            primary.height
-        );
-        assert_eq!(
-            preset.to_pixels(secondary).height,
-            secondary.height
-        );
+        assert_eq!(preset.to_pixels(primary).height, primary.height);
+        assert_eq!(preset.to_pixels(secondary).height, secondary.height);
     }
 
     #[test]

@@ -76,11 +76,7 @@ mod tests {
             ],
             ..Default::default()
         };
-        minimize_unmatched_windows(
-            &system,
-            &system,
-            &HashSet::from([NativeWindowHandle(1)]),
-        );
+        minimize_unmatched_windows(&system, &system, &HashSet::from([NativeWindowHandle(1)]));
         let states = system.states.lock().expect("states");
         assert_eq!(states.len(), 1);
         assert_eq!(states[0], (NativeWindowHandle(2), WindowState::Minimized));
@@ -125,11 +121,7 @@ mod tests {
             ],
             ..Default::default()
         };
-        minimize_unmatched_windows(
-            &system,
-            &system,
-            &HashSet::from([NativeWindowHandle(1)]),
-        );
+        minimize_unmatched_windows(&system, &system, &HashSet::from([NativeWindowHandle(1)]));
         let states = system.states.lock().expect("states");
         assert!(states.is_empty());
     }

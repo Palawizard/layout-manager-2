@@ -115,9 +115,12 @@ impl RunProgressListener for TauriRunProgressListener {
     }
 
     fn on_completed(&self, report: &LayoutRunReport) {
-        let _ = self
-            .app
-            .emit(EVENT_COMPLETED, RunCompletedEvent { report: report.clone() });
+        let _ = self.app.emit(
+            EVENT_COMPLETED,
+            RunCompletedEvent {
+                report: report.clone(),
+            },
+        );
     }
 }
 
@@ -274,9 +277,7 @@ mod tests {
     use super::filter_layout_actions;
     use crate::domain::{
         geometry::NormalizedBounds,
-        layout::{
-            Layout, LayoutAction, LayoutActionId, LayoutId, LayoutOptions, WindowPlacement,
-        },
+        layout::{Layout, LayoutAction, LayoutActionId, LayoutId, LayoutOptions, WindowPlacement},
         monitor::{MonitorFallback, MonitorId, MonitorSelector},
         window::{WindowMatcher, WindowState},
     };

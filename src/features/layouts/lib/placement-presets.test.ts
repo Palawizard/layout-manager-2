@@ -9,7 +9,10 @@ import {
   detectPreset,
 } from "./placement-presets";
 
-function placement(bounds: WindowPlacement["bounds"], patch: Partial<WindowPlacement> = {}): WindowPlacement {
+function placement(
+  bounds: WindowPlacement["bounds"],
+  patch: Partial<WindowPlacement> = {},
+): WindowPlacement {
   return {
     monitorSelector: { preferredId: "\\\\.\\DISPLAY1", fallback: "primary" },
     bounds,
@@ -20,7 +23,10 @@ function placement(bounds: WindowPlacement["bounds"], patch: Partial<WindowPlace
 
 describe("placement presets", () => {
   it("locks full screen to maximized state", () => {
-    const result = applyPlacementPreset(placement({ x: 0, y: 0, width: 0.5, height: 1 }), "fullScreen");
+    const result = applyPlacementPreset(
+      placement({ x: 0, y: 0, width: 0.5, height: 1 }),
+      "fullScreen",
+    );
     expect(result.state).toBe("maximized");
     expect(detectPreset(result)).toBe("fullScreen");
   });

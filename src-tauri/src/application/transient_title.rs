@@ -149,16 +149,15 @@ fn looks_like_progress_title(normalized: &str) -> bool {
     if normalized.len() > 96 {
         return false;
     }
-    let ends_with_ellipsis = normalized.ends_with("...")
-        || normalized.ends_with("…")
-        || normalized.ends_with("..");
+    let ends_with_ellipsis =
+        normalized.ends_with("...") || normalized.ends_with("…") || normalized.ends_with("..");
     if !ends_with_ellipsis {
         return false;
     }
     const PROGRESS_MARKERS: &[&str] = &[
-        "load", "wait", "start", "launch", "boot", "prep", "init", "install", "update",
-        "connect", "sync", "charg", "patient", "demarr", "laden", "warten", "carg", "espere",
-        "caric", "attend", "carreg", "aguarde", "ladow", "zagruz", "jiaz", "gengx",
+        "load", "wait", "start", "launch", "boot", "prep", "init", "install", "update", "connect",
+        "sync", "charg", "patient", "demarr", "laden", "warten", "carg", "espere", "caric",
+        "attend", "carreg", "aguarde", "ladow", "zagruz", "jiaz", "gengx",
     ];
     PROGRESS_MARKERS
         .iter()

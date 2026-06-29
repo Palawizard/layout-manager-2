@@ -4,10 +4,7 @@ use regex::Regex;
 use thiserror::Error;
 
 use crate::{
-    application::{
-        client_window::is_non_client_window,
-        durable_window::window_area,
-    },
+    application::{client_window::is_non_client_window, durable_window::window_area},
     domain::{
         ports::WindowInventory,
         window::{DesktopWindow, NativeWindowHandle, WindowMatcher, WindowState},
@@ -27,10 +24,7 @@ impl std::fmt::Debug for MatchContext<'_> {
             .debug_struct("MatchContext")
             .field("launched_process_id", &self.launched_process_id)
             .field("previous_handles", &self.previous_handles)
-            .field(
-                "process_hierarchy",
-                &self.process_hierarchy.is_some(),
-            )
+            .field("process_hierarchy", &self.process_hierarchy.is_some())
             .finish()
     }
 }
@@ -47,11 +41,10 @@ pub enum WindowMatchError {
     NotFound,
     #[error("several windows matched with the same score")]
     Ambiguous,
-    #[error("requested instance index {requested} is unavailable among {available} matching window(s)")]
-    InstanceNotFound {
-        requested: usize,
-        available: usize,
-    },
+    #[error(
+        "requested instance index {requested} is unavailable among {available} matching window(s)"
+    )]
+    InstanceNotFound { requested: usize, available: usize },
 }
 
 pub fn select_window<'a>(
@@ -62,7 +55,7 @@ pub fn select_window<'a>(
     let ranked = rank_window_matches(matcher, windows, context);
     if let Some(index) = matcher.instance_index {
         let stable = stable_instance_order(&ranked);
-        return stable.get(index).copied().ok_or_else(|| {
+        return stable.get(index).copied().ok_or({
             if ranked.is_empty() {
                 WindowMatchError::NotFound
             } else {
@@ -114,10 +107,7 @@ pub fn rank_window_matches<'a>(
         right
             .score
             .cmp(&left.score)
-            .then_with(|| {
-                window_area(right.window)
-                    .cmp(&window_area(left.window))
-            })
+            .then_with(|| window_area(right.window).cmp(&window_area(left.window)))
             .then_with(|| left.window.process_id.cmp(&right.window.process_id))
             .then_with(|| left.window.handle.0.cmp(&right.window.handle.0))
     });
@@ -149,9 +139,9 @@ fn score_window<'a>(
     }
     let in_launched_tree = context.launched_process_id.is_some_and(|launched_id| {
         window.process_id == launched_id
-            || context
-                .process_hierarchy
-                .is_some_and(|hierarchy| hierarchy.is_process_in_tree(window.process_id, launched_id))
+            || context.process_hierarchy.is_some_and(|hierarchy| {
+                hierarchy.is_process_in_tree(window.process_id, launched_id)
+            })
     });
     if matcher.process_name.as_ref().is_some_and(|expected| {
         window
@@ -205,9 +195,11 @@ fn score_window<'a>(
     {
         score += 25;
     }
-    if matcher.class_name.as_ref().is_some_and(|expected| {
-        window.class_name.eq_ignore_ascii_case(expected)
-    }) {
+    if matcher
+        .class_name
+        .as_ref()
+        .is_some_and(|expected| window.class_name.eq_ignore_ascii_case(expected))
+    {
         score += 15;
     }
     if !window.title.trim().is_empty() {
@@ -265,7 +257,13 @@ mod tests {
         }
     }
 
-    fn electron_window(handle: isize, pid: u32, title: &str, process_name: &str, path: &str) -> DesktopWindow {
+    fn electron_window(
+        handle: isize,
+        pid: u32,
+        title: &str,
+        process_name: &str,
+        path: &str,
+    ) -> DesktopWindow {
         DesktopWindow {
             handle: NativeWindowHandle(handle),
             process_id: pid,

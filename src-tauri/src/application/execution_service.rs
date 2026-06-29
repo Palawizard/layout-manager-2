@@ -23,8 +23,11 @@ use crate::{
             aggregate_run_status,
         },
         layout::{BrowserKind, LayoutActionId},
-        ports::{ProcessLaunchError, ProcessLaunchRequest, ProcessLauncher, WindowController, WindowInventory},
-        window::{NativeWindowHandle},
+        ports::{
+            ProcessLaunchError, ProcessLaunchRequest, ProcessLauncher, WindowController,
+            WindowInventory,
+        },
+        window::NativeWindowHandle,
     },
     infrastructure::browser::{WindowsBrowserLauncher, resolve_browser_executable},
     infrastructure::process::{
@@ -79,10 +82,8 @@ impl ExecutionService {
         listener.on_started(&run_id, &plan.layout_name, total_actions);
 
         let warnings = Arc::new(Mutex::new(warnings));
-        let launch_outcomes = map_with_bounded_concurrency(
-            &plan.launch_steps,
-            MAX_CONCURRENT_LAUNCHES,
-            |step| {
+        let launch_outcomes =
+            map_with_bounded_concurrency(&plan.launch_steps, MAX_CONCURRENT_LAUNCHES, |step| {
                 if cancellation.is_cancelled() {
                     return (
                         step.action_id().clone(),
@@ -100,18 +101,13 @@ impl ExecutionService {
                     cancellation,
                     &mut step_warnings,
                 );
-                if !step_warnings.is_empty() {
-                    if let Ok(mut shared) = warnings.lock() {
-                        shared.extend(step_warnings);
-                    }
+                if !step_warnings.is_empty()
+                    && let Ok(mut shared) = warnings.lock()
+                {
+                    shared.extend(step_warnings);
                 }
-                (
-                    step.action_id().clone(),
-                    step.label().to_owned(),
-                    outcome,
-                )
-            },
-        );
+                (step.action_id().clone(), step.label().to_owned(), outcome)
+            });
 
         for (step, (_, _, launch_result)) in plan.launch_steps.iter().zip(launch_outcomes) {
             let resolved = match launch_result {
@@ -228,10 +224,8 @@ impl ExecutionService {
                             true,
                         ));
                     };
-                    let resolved_path = recover_launch_executable(
-                        path,
-                        window_matcher.process_name.as_deref(),
-                    );
+                    let resolved_path =
+                        recover_launch_executable(path, window_matcher.process_name.as_deref());
                     if !is_windows_executable(std::path::Path::new(&resolved_path)) {
                         return Err(failed_result(
                             action_id,
@@ -287,12 +281,11 @@ impl ExecutionService {
                 startup_timeout_ms,
                 ..
             } => {
-                let reuse = try_reuse_application_window(
-                    inventory,
-                    window_matcher,
-                    *reuse_existing_window,
-                )
-                .map_err(|error| failed_result(action_id, label, wait_error_message(error), true))?;
+                let reuse =
+                    try_reuse_application_window(inventory, window_matcher, *reuse_existing_window)
+                        .map_err(|error| {
+                            failed_result(action_id, label, wait_error_message(error), true)
+                        })?;
                 if let Some(window) = reuse.window {
                     return Ok(ResolvedWindow {
                         handle: window.handle,
@@ -324,7 +317,9 @@ impl ExecutionService {
                     *startup_timeout_ms,
                     cancellation,
                 )
-                .map_err(|error| failed_result(action_id, label, wait_error_message(error), true))?;
+                .map_err(|error| {
+                    failed_result(action_id, label, wait_error_message(error), true)
+                })?;
 
                 Ok(ResolvedWindow {
                     handle: window.handle,
@@ -345,22 +340,23 @@ impl ExecutionService {
                 if *browser_kind == BrowserKind::SystemDefault {
                     warnings.push(RunWarning {
                         code: "default_browser_limit".to_owned(),
-                        message: "Le navigateur par défaut peut ne pas ouvrir une fenêtre distincte."
-                            .to_owned(),
+                        message:
+                            "Le navigateur par défaut peut ne pas ouvrir une fenêtre distincte."
+                                .to_owned(),
                         action_id: Some(action_id.clone()),
                     });
                 }
-                let resolved_executable = resolve_browser_executable(*browser_kind, executable_path.as_deref())
-                    .ok_or_else(|| {
-                        failed_result(
-                            action_id,
-                            label,
-                            "Navigateur introuvable.".to_owned(),
-                            false,
-                        )
-                    })?;
-                let matcher =
-                    browser_window_matcher(*browser_kind, &resolved_executable);
+                let resolved_executable =
+                    resolve_browser_executable(*browser_kind, executable_path.as_deref())
+                        .ok_or_else(|| {
+                            failed_result(
+                                action_id,
+                                label,
+                                "Navigateur introuvable.".to_owned(),
+                                false,
+                            )
+                        })?;
+                let matcher = browser_window_matcher(*browser_kind, &resolved_executable);
                 let previous_handles = snapshot_handles(inventory);
                 let launched = browser_launcher
                     .launch_browser(
@@ -381,7 +377,9 @@ impl ExecutionService {
                     *startup_timeout_ms,
                     cancellation,
                 )
-                .map_err(|error| failed_result(action_id, label, wait_error_message(error), true))?;
+                .map_err(|error| {
+                    failed_result(action_id, label, wait_error_message(error), true)
+                })?;
                 Ok(ResolvedWindow {
                     handle: window.handle,
                     reused: false,
@@ -429,7 +427,10 @@ fn wait_error_message(error: WaitError) -> String {
         WaitError::Cancelled => "Action annulée.".to_owned(),
         WaitError::NotFound => "Fenêtre introuvable.".to_owned(),
         WaitError::Ambiguous => "Plusieurs fenêtres correspondent.".to_owned(),
-        WaitError::InstanceNotFound { requested, available } => format!(
+        WaitError::InstanceNotFound {
+            requested,
+            available,
+        } => format!(
             "Occurrence {requested} introuvable ({available} fenêtre(s) correspondante(s))."
         ),
         WaitError::InventoryFailed => "Impossible d’inspecter les fenêtres.".to_owned(),
@@ -445,12 +446,11 @@ fn launch_error_message(error: ProcessLaunchError) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::execution::RunId;
     use super::{ExecutionService, NoopRunProgressListener};
+    use crate::domain::execution::RunId;
     use crate::{
         application::{
-            execution_planner::build_execution_plan,
-            window_discovery_service::SharedCancellation,
+            execution_planner::build_execution_plan, window_discovery_service::SharedCancellation,
         },
         domain::{
             execution::{ActionRunStatus, LayoutRunStatus},
@@ -462,10 +462,7 @@ mod tests {
             ports::fakes::FakeWindowSystem,
             window::{WindowMatcher, WindowState},
         },
-        infrastructure::{
-            browser::WindowsBrowserLauncher,
-            process::WindowsProcessLauncher,
-        },
+        infrastructure::{browser::WindowsBrowserLauncher, process::WindowsProcessLauncher},
     };
 
     fn monitor() -> Monitor {

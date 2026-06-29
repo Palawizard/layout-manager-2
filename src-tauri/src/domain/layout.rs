@@ -50,12 +50,12 @@ impl WindowPlacement {
             self.bounds.width,
             self.bounds.height,
         )?;
-        if let Some(scale) = self.center_scale {
-            if !scale.is_finite() || !(MIN_CENTER_SCALE..=MAX_CENTER_SCALE).contains(&scale) {
-                return Err(AppError::Validation(
-                    "La taille de la zone centrale est invalide.".to_owned(),
-                ));
-            }
+        if let Some(scale) = self.center_scale
+            && (!scale.is_finite() || !(MIN_CENTER_SCALE..=MAX_CENTER_SCALE).contains(&scale))
+        {
+            return Err(AppError::Validation(
+                "La taille de la zone centrale est invalide.".to_owned(),
+            ));
         }
         Ok(())
     }
@@ -311,9 +311,8 @@ pub fn validate_url(url: &str) -> Result<(), AppError> {
             "L’adresse web est requise.".to_owned(),
         ));
     }
-    let parsed = url::Url::parse(trimmed).map_err(|_| {
-        AppError::Validation("L’adresse web est invalide.".to_owned())
-    })?;
+    let parsed = url::Url::parse(trimmed)
+        .map_err(|_| AppError::Validation("L’adresse web est invalide.".to_owned()))?;
     match parsed.scheme() {
         "http" | "https" => Ok(()),
         _ => Err(AppError::Validation(
@@ -364,8 +363,8 @@ pub const fn default_startup_timeout_ms() -> u32 {
 #[cfg(test)]
 mod tests {
     use super::{
-        BrowserKind, Layout, LayoutAction, LayoutActionId, LayoutId, LayoutOptions,
-        WindowPlacement, validate_layout_name, validate_url, DEFAULT_STARTUP_TIMEOUT_MS,
+        BrowserKind, DEFAULT_STARTUP_TIMEOUT_MS, Layout, LayoutAction, LayoutActionId, LayoutId,
+        LayoutOptions, WindowPlacement, validate_layout_name, validate_url,
     };
     use crate::domain::{
         geometry::NormalizedBounds,

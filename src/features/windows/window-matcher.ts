@@ -82,10 +82,7 @@ export function computeInstanceIndex(
   criteria: Pick<WindowMatcher, "processName" | "className" | "titlePattern">,
 ): number | null {
   const ranked = allWindows
-    .filter(
-      (window) =>
-        matchesCriteria(window, criteria) && !isNonClientWindow(window),
-    )
+    .filter((window) => matchesCriteria(window, criteria) && !isNonClientWindow(window))
     .sort(
       (left, right) =>
         left.processId - right.processId ||

@@ -170,9 +170,7 @@ mod tests {
     #[test]
     fn extracts_a_quoted_executable_from_a_file_type_command() {
         assert_eq!(
-            extract_executable_from_command(
-                "\"C:\\Program Files\\Browser\\browser.exe\" \"%1\""
-            ),
+            extract_executable_from_command("\"C:\\Program Files\\Browser\\browser.exe\" \"%1\""),
             Some("C:\\Program Files\\Browser\\browser.exe".to_owned())
         );
     }
@@ -187,7 +185,9 @@ mod tests {
             BrowserKind::Firefox
         );
         assert_eq!(
-            infer_browser_kind_from_executable("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"),
+            infer_browser_kind_from_executable(
+                "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+            ),
             BrowserKind::Chrome
         );
         assert_eq!(

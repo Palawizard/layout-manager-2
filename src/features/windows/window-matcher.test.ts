@@ -3,12 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { DesktopWindow } from "../../lib/tauri/windows";
 import { buildWindowMatcher, computeInstanceIndex } from "./window-matcher";
 
-function window(
-  processId: number,
-  title: string,
-  processName: string,
-  x = 0,
-): DesktopWindow {
+function window(processId: number, title: string, processName: string, x = 0): DesktopWindow {
   return {
     processId,
     executablePath: null,
@@ -28,10 +23,16 @@ describe("buildWindowMatcher", () => {
       window(20, "Discord B", "Discord.exe", 100),
       window(30, "Vesktop", "vesktop.exe", 200),
     ];
-    const selected = windows[1];
+    const selected = windows[1]!;
 
-    expect(computeInstanceIndex(selected, windows, { processName: "Discord.exe", className: "Chrome_WidgetWin_1", titlePattern: null })).toBe(1);
-    expect(buildWindowMatcher(windows[2], windows)).toEqual({
+    expect(
+      computeInstanceIndex(selected, windows, {
+        processName: "Discord.exe",
+        className: "Chrome_WidgetWin_1",
+        titlePattern: null,
+      }),
+    ).toBe(1);
+    expect(buildWindowMatcher(windows[2]!, windows)).toEqual({
       executablePath: null,
       processName: "vesktop.exe",
       className: "Chrome_WidgetWin_1",
@@ -43,11 +44,14 @@ describe("buildWindowMatcher", () => {
   it("orders same-process windows deterministically for instance selection", () => {
     const windows = [
       { ...window(42, "", "VHConsole.exe"), bounds: { x: 0, y: 0, width: 1920, height: 1080 } },
-      { ...window(42, "VIVE Hub", "VHConsole.exe"), bounds: { x: 100, y: 100, width: 320, height: 240 } },
+      {
+        ...window(42, "VIVE Hub", "VHConsole.exe"),
+        bounds: { x: 100, y: 100, width: 320, height: 240 },
+      },
     ];
 
     expect(
-      computeInstanceIndex(windows[1], windows, {
+      computeInstanceIndex(windows[1]!, windows, {
         processName: "VHConsole.exe",
         className: "Chrome_WidgetWin_1",
         titlePattern: null,
@@ -79,6 +83,6 @@ describe("buildWindowMatcher", () => {
       },
     ];
 
-    expect(buildWindowMatcher(windows[1], windows).instanceIndex).toBe(0);
+    expect(buildWindowMatcher(windows[1]!, windows).instanceIndex).toBe(0);
   });
 });

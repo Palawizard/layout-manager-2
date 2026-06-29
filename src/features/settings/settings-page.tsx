@@ -6,7 +6,12 @@ import { Card, CardContent, CardHeader } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { getAppInfo, type AppInfo } from "../../lib/tauri/app-info";
-import { getSettings, openDataDirectory, openLogsDirectory, saveSettings } from "../../lib/tauri/layouts";
+import {
+  getSettings,
+  openDataDirectory,
+  openLogsDirectory,
+  saveSettings,
+} from "../../lib/tauri/layouts";
 import type { AppSettings, BrowserKind } from "../layouts/types/layout";
 import type { MonitorFallback } from "../../lib/tauri/monitors";
 
