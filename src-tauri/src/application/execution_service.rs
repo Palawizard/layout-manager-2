@@ -50,6 +50,7 @@ struct ResolvedWindow {
 }
 
 impl ExecutionService {
+    #[allow(clippy::too_many_arguments)]
     pub fn execute(
         plan: ExecutionPlan,
         run_id: RunId,

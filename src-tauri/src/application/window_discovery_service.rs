@@ -131,26 +131,13 @@ mod tests {
     use super::{
         NeverCancelled, SharedCancellation, WaitError, find_existing_window, wait_for_window,
     };
-    use std::{
-        collections::HashSet,
-        sync::{
-            Arc,
-            atomic::{AtomicBool, Ordering},
-        },
-    };
+    use std::collections::HashSet;
     use crate::domain::{
         geometry::PixelBounds,
         ports::fakes::FakeWindowSystem,
         window::{DesktopWindow, NativeWindowHandle, WindowMatcher, WindowState},
     };
 
-    struct FlagCancellation(Arc<AtomicBool>);
-
-    impl super::CancellationCheck for FlagCancellation {
-        fn is_cancelled(&self) -> bool {
-            self.0.load(Ordering::SeqCst)
-        }
-    }
 
     fn window(handle: isize, pid: u32) -> DesktopWindow {
         DesktopWindow {

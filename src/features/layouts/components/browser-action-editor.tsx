@@ -1,8 +1,10 @@
 import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
+import { listInstalledBrowsers } from "../../../lib/tauri/execution";
 import type { BrowserKind, LayoutAction } from "../types/layout";
 import { createDefaultPlacement } from "../lib/defaults";
 import { PlacementSelector } from "./placement-selector";
@@ -20,6 +22,23 @@ const browserLabels: Record<BrowserKind, string> = {
 };
 
 export function BrowserActionEditor({ action, onChange }: BrowserActionEditorProps) {
+  const [availableBrowsers, setAvailableBrowsers] = useState<BrowserKind[]>([
+    "edge",
+    "chrome",
+    "firefox",
+    "system_default",
+  ]);
+
+  useEffect(() => {
+    void listInstalledBrowsers()
+      .then((browsers) => {
+        if (browsers.length > 0) {
+          setAvailableBrowsers(browsers.map((browser) => browser.kind));
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
@@ -35,7 +54,7 @@ export function BrowserActionEditor({ action, onChange }: BrowserActionEditorPro
           }
           value={action.browserKind}
         >
-          {(Object.keys(browserLabels) as BrowserKind[]).map((kind) => (
+          {(availableBrowsers as BrowserKind[]).map((kind) => (
             <option key={kind} value={kind}>
               {browserLabels[kind]}
             </option>

@@ -13,11 +13,12 @@ import { MoreHorizontal } from "lucide-react";
 interface LayoutListProps {
   layouts: LayoutSummary[];
   onEdit: (layoutId: string) => void;
+  onRun: (layoutId: string) => void;
   onDuplicate: (layoutId: string) => void;
   onDelete: (layoutId: string) => void;
 }
 
-export function LayoutList({ layouts, onDelete, onDuplicate, onEdit }: LayoutListProps) {
+export function LayoutList({ layouts, onDelete, onDuplicate, onEdit, onRun }: LayoutListProps) {
   return (
     <ul className="grid gap-4">
       {layouts.map((layout) => (
@@ -37,6 +38,9 @@ export function LayoutList({ layouts, onDelete, onDuplicate, onEdit }: LayoutLis
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
+                <Button onClick={() => onRun(layout.id)} size="small">
+                  Lancer
+                </Button>
                 <Button onClick={() => onEdit(layout.id)} size="small" variant="secondary">
                   Modifier
                 </Button>

@@ -134,6 +134,7 @@ export function LayoutsPage() {
           }
           onDuplicate={(layoutId) => void handleDuplicate(layoutId)}
           onEdit={(layoutId) => navigate(`/layouts/${layoutId}`)}
+          onRun={(layoutId) => navigate(`/execution?layoutId=${layoutId}`)}
         />
       )}
 

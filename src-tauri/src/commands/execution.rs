@@ -36,7 +36,7 @@ pub struct ExecutionRuntime {
 }
 
 #[derive(Debug, Default)]
-struct ExecutionRuntimeState {
+pub(crate) struct ExecutionRuntimeState {
     active: bool,
     cancellation: Option<Arc<SharedCancellation>>,
 }
