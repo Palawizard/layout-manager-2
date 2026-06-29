@@ -68,7 +68,7 @@ impl Default for LayoutOptions {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
+#[serde(tag = "kind", rename_all = "snake_case", rename_all_fields = "camelCase")]
 pub enum LayoutAction {
     LaunchApplication {
         id: LayoutActionId,

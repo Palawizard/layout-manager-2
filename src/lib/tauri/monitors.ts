@@ -1,5 +1,7 @@
 import { invokeCommand } from "./client";
 
+export type MonitorFallback = "primary" | "first_available";
+
 export interface WorkArea {
   x: number;
   y: number;
