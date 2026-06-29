@@ -13,6 +13,14 @@ export interface DesktopWindow {
   monitorId: string | null;
 }
 
+export interface WindowMatcher {
+  executablePath: string | null;
+  processName: string | null;
+  className: string | null;
+  titlePattern: string | null;
+  instanceIndex: number | null;
+}
+
 export function listDesktopWindows() {
   return invokeCommand<DesktopWindow[]>("list_desktop_windows");
 }

@@ -1,8 +1,13 @@
 import { LayoutDashboard } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
+import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
+import { WindowPicker } from "../windows/window-picker";
 
 export function LayoutsPage() {
+  const [pickerOpen, setPickerOpen] = useState(false);
   return (
     <section aria-labelledby="layouts-title">
       <div className="mb-8">
@@ -22,8 +27,16 @@ export function LayoutsPage() {
           <p className="mt-2 max-w-sm text-sm text-muted-foreground">
             Créez un layout pour organiser votre espace de travail.
           </p>
+          <Button className="mt-6" onClick={() => setPickerOpen(true)} variant="secondary">
+            Voir les fenêtres ouvertes
+          </Button>
         </CardContent>
       </Card>
+      <WindowPicker
+        onOpenChange={setPickerOpen}
+        onSelect={(window) => toast.success(`Fenêtre sélectionnée : ${window.title}`)}
+        open={pickerOpen}
+      />
     </section>
   );
 }
