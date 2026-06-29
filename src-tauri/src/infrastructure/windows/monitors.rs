@@ -2,9 +2,10 @@ use std::mem::size_of;
 
 use windows::{
     Win32::{
-        Foundation::{LPARAM, RECT},
+        Foundation::{HWND, LPARAM, RECT},
         Graphics::Gdi::{
-            EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO, MONITORINFOEXW,
+            EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITOR_DEFAULTTONEAREST,
+            MONITORINFO, MONITORINFOEXW, MonitorFromWindow,
         },
         UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI},
         UI::WindowsAndMessaging::MONITORINFOF_PRIMARY,
@@ -89,4 +90,10 @@ fn inspect_monitor(handle: HMONITOR) -> Result<Monitor, NativeError> {
         scale_factor: f64::from(dpi_x) / 96.0,
         is_primary: info.monitorInfo.dwFlags & MONITORINFOF_PRIMARY != 0,
     })
+}
+
+pub(super) fn monitor_id_from_window(window: HWND) -> Option<MonitorId> {
+    // SAFETY: The handle is inspected only to obtain its nearest monitor.
+    let monitor = unsafe { MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST) };
+    inspect_monitor(monitor).ok().map(|monitor| monitor.id)
 }

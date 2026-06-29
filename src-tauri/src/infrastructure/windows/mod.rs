@@ -1,9 +1,11 @@
 #![allow(unsafe_code)]
 
-use windows::Win32::UI::HiDpi::{
+use ::windows::Win32::UI::HiDpi::{
     DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext,
 };
 
+#[path = "windows.rs"]
+mod inventory;
 mod monitors;
 
 #[derive(Debug, Default)]

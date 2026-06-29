@@ -14,7 +14,8 @@ pub fn run() {
         .manage(infrastructure::windows::Win32WindowSystem::new())
         .invoke_handler(tauri::generate_handler![
             commands::app_info::get_app_info,
-            commands::system::list_monitors
+            commands::system::list_monitors,
+            commands::system::list_desktop_windows
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Layout Manager 2");
