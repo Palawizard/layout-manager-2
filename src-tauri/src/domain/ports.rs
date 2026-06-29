@@ -2,9 +2,11 @@ use thiserror::Error;
 
 use super::{
     geometry::PixelBounds,
+    layout::{Layout, LayoutId, LayoutSummary},
     monitor::Monitor,
     window::{DesktopWindow, NativeWindowHandle, WindowState},
 };
+use crate::error::AppError;
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum NativeError {
@@ -36,6 +38,13 @@ pub trait WindowController: Send + Sync {
         handle: NativeWindowHandle,
         state: WindowState,
     ) -> Result<(), NativeError>;
+}
+
+pub trait LayoutRepository: Send + Sync {
+    fn list_summaries(&self) -> Result<Vec<LayoutSummary>, AppError>;
+    fn get(&self, id: &LayoutId) -> Result<Layout, AppError>;
+    fn save(&self, layout: &Layout) -> Result<(), AppError>;
+    fn delete(&self, id: &LayoutId) -> Result<(), AppError>;
 }
 
 #[cfg(test)]

@@ -100,23 +100,26 @@ fn current_timestamp() -> i64 {
 }
 
 #[cfg(test)]
+pub(crate) fn open_in_memory_for_tests() -> Database {
+    let connection = Connection::open_in_memory().expect("in-memory database");
+    connection
+        .execute("PRAGMA foreign_keys = ON;", [])
+        .expect("foreign keys");
+    let database = Database {
+        path: std::env::temp_dir().join("layout-manager-test.sqlite"),
+        connection: Mutex::new(connection),
+    };
+    database.migrate().expect("migration");
+    database
+}
+
+#[cfg(test)]
 mod tests {
-    use super::Database;
+    use super::{open_in_memory_for_tests, Database};
     use crate::error::AppError;
-    use rusqlite::Connection;
-    use std::sync::Mutex;
 
     fn open_test_database() -> Database {
-        let connection = Connection::open_in_memory().expect("in-memory database");
-        connection
-            .execute("PRAGMA foreign_keys = ON;", [])
-            .expect("foreign keys");
-        let database = Database {
-            path: std::env::temp_dir().join("layout-manager-test.sqlite"),
-            connection: Mutex::new(connection),
-        };
-        database.migrate().expect("migration");
-        database
+        open_in_memory_for_tests()
     }
 
     #[test]
