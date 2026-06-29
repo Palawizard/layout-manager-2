@@ -13,6 +13,7 @@ pub fn run() {
     tracing::info!(version = env!("CARGO_PKG_VERSION"), "application starting");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let database = infrastructure::persistence::Database::open(app.handle())?;
             app.manage(database);
