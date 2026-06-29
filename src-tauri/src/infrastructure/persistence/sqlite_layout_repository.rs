@@ -1,8 +1,8 @@
-use rusqlite::{params, OptionalExtension};
+use rusqlite::{OptionalExtension, params};
 
 use crate::{
-        domain::{
-            layout::{Layout, LayoutAction, LayoutId, LayoutOptions, LayoutSummary},
+    domain::{
+        layout::{Layout, LayoutAction, LayoutId, LayoutOptions, LayoutSummary},
         ports::LayoutRepository,
     },
     error::AppError,
@@ -199,7 +199,7 @@ mod tests {
             ports::LayoutRepository,
             window::WindowMatcher,
         },
-        infrastructure::persistence::database::open_in_memory_for_tests,
+        infrastructure::persistence::open_in_memory_for_tests,
     };
 
     fn test_repository() -> SqliteLayoutRepository<'static> {

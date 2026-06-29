@@ -43,9 +43,9 @@ const layoutActionSchema = z.discriminatedUnion("kind", [
       (matcher) =>
         Boolean(
           matcher.executablePath ||
-            matcher.processName ||
-            matcher.className ||
-            matcher.titlePattern,
+          matcher.processName ||
+          matcher.className ||
+          matcher.titlePattern,
         ),
       { message: "Sélectionnez une fenêtre à retrouver." },
     ),

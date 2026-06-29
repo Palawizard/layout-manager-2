@@ -19,9 +19,24 @@ Object.defineProperty(window, "matchMedia", {
 });
 
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn().mockResolvedValue({
-    name: "Layout Manager 2",
-    version: "0.1.0",
-    platform: "windows",
+  invoke: vi.fn((command: string) => {
+    switch (command) {
+      case "get_app_info":
+        return Promise.resolve({
+          name: "Layout Manager 2",
+          version: "0.1.0",
+          platform: "windows",
+        });
+      case "list_layouts":
+        return Promise.resolve([]);
+      case "get_settings":
+        return Promise.resolve({
+          preferredBrowser: "edge",
+          defaultStartupTimeoutMs: 15_000,
+          monitorFallback: "primary",
+        });
+      default:
+        return Promise.resolve(null);
+    }
   }),
 }));

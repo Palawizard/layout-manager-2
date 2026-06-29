@@ -15,10 +15,7 @@ pub fn list_layouts(database: State<'_, Database>) -> Result<Vec<LayoutSummary>,
 }
 
 #[tauri::command]
-pub fn get_layout(
-    database: State<'_, Database>,
-    layout_id: String,
-) -> Result<Layout, PublicError> {
+pub fn get_layout(database: State<'_, Database>, layout_id: String) -> Result<Layout, PublicError> {
     LayoutService::new(SqliteLayoutRepository::new(&database))
         .get(&LayoutId(layout_id))
         .map_err(PublicError::from)
@@ -42,10 +39,7 @@ pub fn duplicate_layout(
 }
 
 #[tauri::command]
-pub fn delete_layout(
-    database: State<'_, Database>,
-    layout_id: String,
-) -> Result<(), PublicError> {
+pub fn delete_layout(database: State<'_, Database>, layout_id: String) -> Result<(), PublicError> {
     LayoutService::new(SqliteLayoutRepository::new(&database))
         .delete(&LayoutId(layout_id))
         .map_err(PublicError::from)
@@ -66,11 +60,13 @@ mod tests {
     use crate::{
         application::layout_service::LayoutService,
         domain::{
-            layout::{Layout, LayoutAction, LayoutActionId, LayoutId, LayoutOptions, WindowPlacement},
+            layout::{
+                Layout, LayoutAction, LayoutActionId, LayoutId, LayoutOptions, WindowPlacement,
+            },
             monitor::{MonitorFallback, MonitorId, MonitorSelector},
             window::WindowMatcher,
         },
-        infrastructure::persistence::{open_in_memory_for_tests, SqliteLayoutRepository},
+        infrastructure::persistence::{SqliteLayoutRepository, open_in_memory_for_tests},
     };
 
     #[test]

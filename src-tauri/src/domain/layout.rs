@@ -68,7 +68,11 @@ impl Default for LayoutOptions {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "snake_case",
+    rename_all_fields = "camelCase"
+)]
 pub enum LayoutAction {
     LaunchApplication {
         id: LayoutActionId,
@@ -266,7 +270,9 @@ pub fn validate_executable_path(path: &str) -> Result<(), AppError> {
 pub fn validate_url(url: &str) -> Result<(), AppError> {
     let trimmed = url.trim();
     if trimmed.is_empty() {
-        return Err(AppError::Validation("L’adresse web est requise.".to_owned()));
+        return Err(AppError::Validation(
+            "L’adresse web est requise.".to_owned(),
+        ));
     }
     let lower = trimmed.to_ascii_lowercase();
     if !lower.starts_with("https://") && !lower.starts_with("http://") {
@@ -350,7 +356,10 @@ mod tests {
 
     #[test]
     fn validates_layout_names_and_descriptions() {
-        assert_eq!(validate_layout_name("  Travail  ").expect("name"), "Travail");
+        assert_eq!(
+            validate_layout_name("  Travail  ").expect("name"),
+            "Travail"
+        );
         assert!(validate_layout_name(" ").is_err());
         assert!(validate_layout_name(&"a".repeat(81)).is_err());
     }

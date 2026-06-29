@@ -33,8 +33,7 @@ impl Database {
             .path()
             .app_data_dir()
             .map_err(|error| AppError::Storage(error.to_string()))?;
-        fs::create_dir_all(&directory)
-            .map_err(|error| AppError::Storage(error.to_string()))?;
+        fs::create_dir_all(&directory).map_err(|error| AppError::Storage(error.to_string()))?;
         let path = directory.join("layout-manager-2.sqlite");
         let connection =
             Connection::open(&path).map_err(|error| AppError::Storage(error.to_string()))?;
@@ -58,10 +57,7 @@ impl Database {
         &self,
         operation: impl FnOnce(&Connection) -> Result<T, AppError>,
     ) -> Result<T, AppError> {
-        let connection = self
-            .connection
-            .lock()
-            .map_err(|_| AppError::Internal)?;
+        let connection = self.connection.lock().map_err(|_| AppError::Internal)?;
         operation(&connection)
     }
 
@@ -115,7 +111,7 @@ pub(crate) fn open_in_memory_for_tests() -> Database {
 
 #[cfg(test)]
 mod tests {
-    use super::{open_in_memory_for_tests, Database};
+    use super::{Database, open_in_memory_for_tests};
     use crate::error::AppError;
 
     fn open_test_database() -> Database {
@@ -128,9 +124,7 @@ mod tests {
         database
             .with_connection(|connection| {
                 let tables: Vec<String> = connection
-                    .prepare(
-                        "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
-                    )
+                    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
                     .expect("query")
                     .query_map([], |row| row.get(0))
                     .expect("rows")

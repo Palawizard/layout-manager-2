@@ -65,7 +65,6 @@ impl PlacementPreset {
     }
 }
 
-#[must_use]
 pub fn build_window_placement(
     monitor_id: MonitorId,
     fallback: MonitorFallback,

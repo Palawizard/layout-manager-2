@@ -14,6 +14,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let database = infrastructure::persistence::Database::open(app.handle())?;
             app.manage(database);
@@ -29,7 +30,10 @@ pub fn run() {
             commands::layouts::save_layout,
             commands::layouts::duplicate_layout,
             commands::layouts::delete_layout,
-            commands::layouts::validate_executable
+            commands::layouts::validate_executable,
+            commands::settings::get_settings,
+            commands::settings::save_settings,
+            commands::settings::open_data_directory
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Layout Manager 2");
