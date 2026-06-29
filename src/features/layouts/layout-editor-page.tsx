@@ -199,10 +199,18 @@ export function LayoutEditorPage() {
               >
                 Application
               </Button>
-              <Button onClick={() => addAction("place_existing_window")} size="small" variant="secondary">
+              <Button
+                onClick={() => addAction("place_existing_window")}
+                size="small"
+                variant="secondary"
+              >
                 Fenêtre existante
               </Button>
-              <Button onClick={() => addAction("open_browser_window")} size="small" variant="secondary">
+              <Button
+                onClick={() => addAction("open_browser_window")}
+                size="small"
+                variant="secondary"
+              >
                 Navigateur
               </Button>
             </div>
