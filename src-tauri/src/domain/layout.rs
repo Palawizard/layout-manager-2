@@ -49,7 +49,7 @@ impl WindowPlacement {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LayoutOptions {
     pub minimize_unmatched_windows: bool,
