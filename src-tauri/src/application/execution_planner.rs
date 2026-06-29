@@ -416,6 +416,29 @@ mod tests {
     }
 
     #[test]
+    fn rejects_invalid_browser_urls() {
+        let layout = Layout {
+            id: LayoutId("layout-1".to_owned()),
+            name: "Travail".to_owned(),
+            description: None,
+            actions: vec![LayoutAction::OpenBrowserWindow {
+                id: LayoutActionId("action-1".to_owned()),
+                browser_kind: BrowserKind::Edge,
+                executable_path: None,
+                profile: None,
+                urls: vec!["ftp://example.com".to_owned()],
+                placement: sample_placement(),
+                startup_timeout_ms: 10_000,
+            }],
+            options: LayoutOptions::default(),
+            created_at: 0,
+            updated_at: 0,
+        };
+
+        assert!(build_execution_plan(&layout, &[sample_monitor("primary")]).is_err());
+    }
+
+    #[test]
     fn execution_phases_are_ordered() {
         assert!((ExecutionPhase::Launch as u8) < (ExecutionPhase::Placement as u8));
         assert!((ExecutionPhase::Placement as u8) < (ExecutionPhase::MinimizeUnmatched as u8));

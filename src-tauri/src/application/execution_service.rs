@@ -569,4 +569,43 @@ mod tests {
         assert_eq!(report.results[0].status, ActionRunStatus::Failed);
         assert_eq!(report.results[1].status, ActionRunStatus::Succeeded);
     }
+
+    #[test]
+    fn marks_cancelled_launch_steps_as_skipped() {
+        let layout = Layout {
+            id: LayoutId("layout-1".to_owned()),
+            name: "Travail".to_owned(),
+            description: None,
+            actions: vec![LayoutAction::PlaceExistingWindow {
+                id: LayoutActionId("action-1".to_owned()),
+                window_matcher: WindowMatcher {
+                    process_name: Some("missing.exe".to_owned()),
+                    ..Default::default()
+                },
+                placement: placement(),
+                captured_placement: None,
+                executable_path: None,
+                reopen_if_absent: false,
+                startup_timeout_ms: 15_000,
+            }],
+            options: LayoutOptions::default(),
+            created_at: 0,
+            updated_at: 0,
+        };
+        let cancellation = SharedCancellation::new();
+        cancellation.cancel();
+        let plan = build_execution_plan(&layout, &[monitor()]).expect("plan");
+        let report = ExecutionService::execute(
+            plan,
+            RunId("run-1".to_owned()),
+            &FakeWindowSystem::default(),
+            &FakeWindowSystem::default(),
+            &WindowsProcessLauncher,
+            &WindowsBrowserLauncher,
+            &cancellation,
+            &NoopRunProgressListener,
+        );
+        assert_eq!(report.status, LayoutRunStatus::Cancelled);
+        assert_eq!(report.results[0].status, ActionRunStatus::Skipped);
+    }
 }

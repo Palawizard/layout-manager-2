@@ -190,10 +190,7 @@ mod tests {
 
     #[test]
     fn restores_a_database_from_backup_after_corruption() {
-        let directory = std::env::temp_dir().join(format!(
-            "layout-manager-db-test-{}",
-            current_timestamp()
-        ));
+        let directory = std::env::temp_dir().join("layout-manager-db-test-restore");
         fs::create_dir_all(&directory).expect("directory");
         let path = directory.join("layout-manager-2.sqlite");
         fs::write(&path, b"not-a-database").expect("corrupt file");
@@ -208,10 +205,7 @@ mod tests {
 
     #[test]
     fn creates_a_backup_before_the_first_migration() {
-        let directory = std::env::temp_dir().join(format!(
-            "layout-manager-db-backup-{}",
-            current_timestamp()
-        ));
+        let directory = std::env::temp_dir().join("layout-manager-db-backup-test");
         fs::create_dir_all(&directory).expect("directory");
         let path = directory.join("layout-manager-2.sqlite");
         fs::write(&path, b"seed").expect("seed");
