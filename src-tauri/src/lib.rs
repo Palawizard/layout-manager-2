@@ -11,6 +11,7 @@ pub fn run() {
     tracing::info!(version = env!("CARGO_PKG_VERSION"), "application starting");
 
     tauri::Builder::default()
+        .manage(infrastructure::windows::Win32WindowSystem::new())
         .invoke_handler(tauri::generate_handler![commands::app_info::get_app_info])
         .run(tauri::generate_context!())
         .expect("failed to run Layout Manager 2");
