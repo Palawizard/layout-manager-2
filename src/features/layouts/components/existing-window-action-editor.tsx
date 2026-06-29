@@ -51,7 +51,7 @@ export function ExistingWindowActionEditor({ action, onChange }: ExistingWindowA
               },
             })
           }
-          placeholder="Expression exacte ou vide"
+          placeholder="Partie du titre"
           value={action.windowMatcher.titlePattern ?? ""}
         />
       </div>
@@ -69,7 +69,7 @@ export function ExistingWindowActionEditor({ action, onChange }: ExistingWindowA
               },
             })
           }
-          placeholder="Automatique si vide — 0 = première, 1 = deuxième…"
+          placeholder="Laisser vide pour la première fenêtre"
           type="number"
           value={action.windowMatcher.instanceIndex ?? ""}
         />
