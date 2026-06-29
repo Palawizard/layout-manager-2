@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use regex::Regex;
+use thiserror::Error;
 
 use crate::domain::window::{DesktopWindow, NativeWindowHandle, WindowMatcher};
 
@@ -14,6 +15,36 @@ pub struct MatchContext {
 pub struct RankedWindow<'a> {
     pub window: &'a DesktopWindow,
     pub score: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+pub enum WindowMatchError {
+    #[error("no window matched")]
+    NotFound,
+    #[error("several windows matched with the same score")]
+    Ambiguous,
+}
+
+pub fn select_window<'a>(
+    matcher: &WindowMatcher,
+    windows: &'a [DesktopWindow],
+    context: &MatchContext,
+) -> Result<&'a DesktopWindow, WindowMatchError> {
+    let ranked = rank_window_matches(matcher, windows, context);
+    if let Some(index) = matcher.instance_index {
+        return ranked
+            .get(index)
+            .map(|candidate| candidate.window)
+            .ok_or(WindowMatchError::NotFound);
+    }
+    let best = ranked.first().ok_or(WindowMatchError::NotFound)?;
+    if ranked
+        .get(1)
+        .is_some_and(|second| second.score == best.score)
+    {
+        return Err(WindowMatchError::Ambiguous);
+    }
+    Ok(best.window)
 }
 
 #[must_use]
@@ -84,7 +115,7 @@ fn path_eq(left: &str, right: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{MatchContext, rank_window_matches};
+    use super::{MatchContext, WindowMatchError, rank_window_matches, select_window};
     use crate::domain::{
         geometry::PixelBounds,
         window::{DesktopWindow, NativeWindowHandle, WindowMatcher, WindowState},
@@ -138,5 +169,36 @@ mod tests {
         };
 
         assert!(rank_window_matches(&matcher, &windows, &MatchContext::default()).is_empty());
+    }
+
+    #[test]
+    fn reports_an_ambiguous_best_match() {
+        let windows = [window(1, 10, "One"), window(2, 20, "Two")];
+        let matcher = WindowMatcher {
+            process_name: Some("editor.exe".to_owned()),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            select_window(&matcher, &windows, &MatchContext::default()),
+            Err(WindowMatchError::Ambiguous)
+        );
+    }
+
+    #[test]
+    fn uses_the_requested_instance_index() {
+        let windows = [window(1, 10, "One"), window(2, 20, "Two")];
+        let matcher = WindowMatcher {
+            process_name: Some("editor.exe".to_owned()),
+            instance_index: Some(1),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            select_window(&matcher, &windows, &MatchContext::default())
+                .expect("second instance")
+                .process_id,
+            20
+        );
     }
 }
