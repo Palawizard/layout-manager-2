@@ -18,6 +18,7 @@ pub enum WaitError {
     Cancelled,
     NotFound,
     Ambiguous,
+    InstanceNotFound { requested: usize, available: usize },
     InventoryFailed,
 }
 
@@ -104,6 +105,12 @@ pub fn wait_for_window(
             Ok(window) => return Ok(window.clone()),
             Err(WindowMatchError::NotFound) => {}
             Err(WindowMatchError::Ambiguous) => return Err(WaitError::Ambiguous),
+            Err(WindowMatchError::InstanceNotFound { requested, available }) => {
+                return Err(WaitError::InstanceNotFound {
+                    requested,
+                    available,
+                });
+            }
         }
 
         thread::sleep(Duration::from_millis(delay_ms));
@@ -123,6 +130,12 @@ pub fn find_existing_window(
         Ok(window) => Ok(Some(window.clone())),
         Err(WindowMatchError::NotFound) => Ok(None),
         Err(WindowMatchError::Ambiguous) => Err(WaitError::Ambiguous),
+        Err(WindowMatchError::InstanceNotFound { requested, available }) => {
+            Err(WaitError::InstanceNotFound {
+                requested,
+                available,
+            })
+        }
     }
 }
 

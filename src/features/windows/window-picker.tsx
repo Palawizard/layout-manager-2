@@ -103,7 +103,7 @@ export function WindowPicker({ open, onOpenChange, onSelect }: WindowPickerProps
                 className="flex w-full items-center gap-3 border-b border-border p-3 text-left last:border-0 hover:bg-muted focus-visible:bg-muted"
                 key={`${window.processId}-${window.className}-${window.title}`}
                 onClick={() => {
-                  onSelect(window, buildWindowMatcher(window));
+                  onSelect(window, buildWindowMatcher(window, windows));
                   onOpenChange(false);
                 }}
                 type="button"

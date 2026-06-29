@@ -48,7 +48,7 @@ export function ExistingWindowActionEditor({ action, onChange }: ExistingWindowA
         />
       </div>
       <div>
-        <Label htmlFor="instance-index">Occurrence</Label>
+        <Label htmlFor="instance-index">Occurrence (facultatif)</Label>
         <Input
           id="instance-index"
           min={0}
@@ -61,6 +61,7 @@ export function ExistingWindowActionEditor({ action, onChange }: ExistingWindowA
               },
             })
           }
+          placeholder="Automatique si vide — 0 = première, 1 = deuxième…"
           type="number"
           value={action.windowMatcher.instanceIndex ?? ""}
         />

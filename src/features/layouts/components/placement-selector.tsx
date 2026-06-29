@@ -27,11 +27,35 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const preset = useMemo(() => detectPreset(value.bounds), [value.bounds]);
 
+  const preferredMonitorId = value.monitorSelector.preferredId;
+
   useEffect(() => {
     void listMonitors()
       .then(setMonitors)
       .catch(() => setMonitors([]));
   }, []);
+
+  useEffect(() => {
+    if (monitors.length === 0) {
+      return;
+    }
+    const isPlaceholder = preferredMonitorId === "primary";
+    const isKnown = monitors.some((monitor) => monitor.id === preferredMonitorId);
+    if (!isPlaceholder && isKnown) {
+      return;
+    }
+    const preferred = monitors.find((monitor) => monitor.isPrimary) ?? monitors[0];
+    if (preferred.id === preferredMonitorId) {
+      return;
+    }
+    onChange({
+      ...value,
+      monitorSelector: {
+        ...value.monitorSelector,
+        preferredId: preferred.id,
+      },
+    });
+  }, [monitors, onChange, preferredMonitorId, value]);
 
   function updatePlacement(patch: Partial<WindowPlacement>) {
     onChange({ ...value, ...patch });

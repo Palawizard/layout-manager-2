@@ -315,6 +315,9 @@ fn wait_error_message(error: WaitError) -> String {
         WaitError::Cancelled => "Action annulée.".to_owned(),
         WaitError::NotFound => "Fenêtre introuvable.".to_owned(),
         WaitError::Ambiguous => "Plusieurs fenêtres correspondent.".to_owned(),
+        WaitError::InstanceNotFound { requested, available } => format!(
+            "Occurrence {requested} introuvable ({available} fenêtre(s) correspondante(s))."
+        ),
         WaitError::InventoryFailed => "Impossible d’inspecter les fenêtres.".to_owned(),
     }
 }

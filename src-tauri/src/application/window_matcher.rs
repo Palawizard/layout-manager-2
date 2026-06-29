@@ -23,6 +23,11 @@ pub enum WindowMatchError {
     NotFound,
     #[error("several windows matched with the same score")]
     Ambiguous,
+    #[error("requested instance index {requested} is unavailable among {available} matching window(s)")]
+    InstanceNotFound {
+        requested: usize,
+        available: usize,
+    },
 }
 
 pub fn select_window<'a>(
@@ -32,10 +37,16 @@ pub fn select_window<'a>(
 ) -> Result<&'a DesktopWindow, WindowMatchError> {
     let ranked = rank_window_matches(matcher, windows, context);
     if let Some(index) = matcher.instance_index {
-        return ranked
-            .get(index)
-            .map(|candidate| candidate.window)
-            .ok_or(WindowMatchError::NotFound);
+        return ranked.get(index).map(|candidate| candidate.window).ok_or_else(|| {
+            if ranked.is_empty() {
+                WindowMatchError::NotFound
+            } else {
+                WindowMatchError::InstanceNotFound {
+                    requested: index,
+                    available: ranked.len(),
+                }
+            }
+        });
     }
     let best = ranked.first().ok_or(WindowMatchError::NotFound)?;
     if ranked
@@ -76,16 +87,11 @@ fn score_window<'a>(
     context: &MatchContext,
     title_regex: Option<&Regex>,
 ) -> Option<RankedWindow<'a>> {
-    if matcher.executable_path.as_ref().is_some_and(|expected| {
-        window
-            .executable_path
-            .as_ref()
-            .is_none_or(|actual| !path_eq(expected, actual))
-    }) || matcher.process_name.as_ref().is_some_and(|expected| {
+    if matcher.process_name.as_ref().is_some_and(|expected| {
         window
             .process_name
             .as_ref()
-            .is_none_or(|actual| !actual.eq_ignore_ascii_case(expected))
+            .is_some_and(|actual| !process_name_eq(expected, actual))
     }) || matcher
         .class_name
         .as_ref()
@@ -101,7 +107,14 @@ fn score_window<'a>(
     if !context.previous_handles.contains(&window.handle) {
         score += 50;
     }
-    score += u32::from(matcher.executable_path.is_some()) * 30;
+    if matcher
+        .executable_path
+        .as_ref()
+        .zip(window.executable_path.as_ref())
+        .is_some_and(|(expected, actual)| path_eq(expected, actual))
+    {
+        score += 40;
+    }
     score += u32::from(matcher.process_name.is_some()) * 20;
     score += u32::from(matcher.class_name.is_some()) * 15;
     score += u32::from(matcher.title_pattern.is_some()) * 10;
@@ -111,6 +124,15 @@ fn score_window<'a>(
 fn path_eq(left: &str, right: &str) -> bool {
     left.replace('/', "\\")
         .eq_ignore_ascii_case(&right.replace('/', "\\"))
+}
+
+fn process_name_eq(expected: &str, actual: &str) -> bool {
+    fn stem(name: &str) -> &str {
+        name.strip_suffix(".exe")
+            .or_else(|| name.strip_suffix(".EXE"))
+            .unwrap_or(name)
+    }
+    stem(expected).eq_ignore_ascii_case(stem(actual))
 }
 
 #[cfg(test)]
@@ -129,6 +151,25 @@ mod tests {
             process_name: Some("Editor.exe".to_owned()),
             title: title.to_owned(),
             class_name: "EditorWindow".to_owned(),
+            bounds: PixelBounds {
+                x: 0,
+                y: 0,
+                width: 800,
+                height: 600,
+            },
+            state: WindowState::Normal,
+            monitor_id: None,
+        }
+    }
+
+    fn electron_window(handle: isize, pid: u32, title: &str, process_name: &str, path: &str) -> DesktopWindow {
+        DesktopWindow {
+            handle: NativeWindowHandle(handle),
+            process_id: pid,
+            executable_path: Some(path.to_owned()),
+            process_name: Some(process_name.to_owned()),
+            title: title.to_owned(),
+            class_name: "Chrome_WidgetWin_1".to_owned(),
             bounds: PixelBounds {
                 x: 0,
                 y: 0,
@@ -182,6 +223,71 @@ mod tests {
         assert_eq!(
             select_window(&matcher, &windows, &MatchContext::default()),
             Err(WindowMatchError::Ambiguous)
+        );
+    }
+
+    #[test]
+    fn matches_when_executable_path_changed_after_an_update() {
+        let windows = [electron_window(
+            1,
+            10,
+            "Discord",
+            "Discord.exe",
+            "C:\\Apps\\Discord\\app-2.0.0\\Discord.exe",
+        )];
+        let matcher = WindowMatcher {
+            executable_path: Some("C:\\Apps\\Discord\\app-1.0.0\\Discord.exe".to_owned()),
+            process_name: Some("Discord.exe".to_owned()),
+            class_name: Some("Chrome_WidgetWin_1".to_owned()),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            select_window(&matcher, &windows, &MatchContext::default())
+                .expect("process name still matches")
+                .process_id,
+            10
+        );
+    }
+
+    #[test]
+    fn compares_process_names_without_the_exe_suffix() {
+        let windows = [electron_window(
+            1,
+            10,
+            "Vesktop",
+            "Vesktop.exe",
+            "C:\\Apps\\Vesktop\\Vesktop.exe",
+        )];
+        let matcher = WindowMatcher {
+            process_name: Some("vesktop".to_owned()),
+            class_name: Some("Chrome_WidgetWin_1".to_owned()),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            select_window(&matcher, &windows, &MatchContext::default())
+                .expect("stem comparison")
+                .process_id,
+            10
+        );
+    }
+
+    #[test]
+    fn reports_when_the_requested_instance_is_unavailable() {
+        let windows = [window(1, 10, "Only")];
+        let matcher = WindowMatcher {
+            process_name: Some("editor.exe".to_owned()),
+            instance_index: Some(1),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            select_window(&matcher, &windows, &MatchContext::default()),
+            Err(WindowMatchError::InstanceNotFound {
+                requested: 1,
+                available: 1,
+            })
         );
     }
 
