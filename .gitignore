@@ -24,6 +24,7 @@ Thumbs.db
 *.db-shm
 *.db-wal
 *.log
+src-tauri/logs/
 
 # Local AI documentation must stay outside version control
 docs-ia/
