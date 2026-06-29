@@ -62,3 +62,16 @@ jobs:
           path: |
             src-tauri/target/release/bundle/**/*
             release-checksums.txt
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Layout Manager 2 ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+          files: |
+            src-tauri/target/release/bundle/**/*
+            release-checksums.txt
+          prerelease: false
+          draft: false

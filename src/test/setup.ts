@@ -24,7 +24,7 @@ vi.mock("@tauri-apps/api/core", () => ({
       case "get_app_info":
         return Promise.resolve({
           name: "Layout Manager 2",
-          version: "0.1.0",
+          version: "0.1.0-beta.1",
           platform: "windows",
         });
       case "list_layouts":

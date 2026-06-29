@@ -10,7 +10,7 @@ describe("getAppInfo", () => {
     expect(vi.mocked(invoke)).toHaveBeenCalledWith("get_app_info", undefined);
     expect(info).toEqual({
       name: "Layout Manager 2",
-      version: "0.1.0",
+      version: "0.1.0-beta.1",
       platform: "windows",
     });
   });

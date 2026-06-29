@@ -1,6 +1,6 @@
 [package]
 name = "layout-manager-2"
-version = "0.1.0"
+version = "0.1.0-beta.1"
 description = "Windows workspace layout manager"
 authors = ["Layout Manager 2 contributors"]
 edition = "2024"

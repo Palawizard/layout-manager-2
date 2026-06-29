@@ -1,0 +1,73 @@
+name: Rapport de bug (beta)
+description: Signaler un problème rencontré avec Layout Manager 2 beta
+title: "[Beta] "
+labels: ["bug", "beta"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci pour votre retour sur la beta. Décrivez le problème de façon observable.
+        N'incluez pas de données sensibles (mots de passe, chemins personnels complets).
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Zone concernée
+      options:
+        - Layouts (liste / éditeur)
+        - Exécution / placement
+        - Navigateur
+        - Multi-écrans / DPI
+        - Réglages / persistance
+        - Installation
+        - Autre
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version installée
+      placeholder: "0.1.0-beta.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Étapes pour reproduire
+      placeholder: |
+        1. Créer un layout avec ...
+        2. Lancer le layout
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportement observé
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environnement
+      description: Version Windows, nombre d'écrans, mise à l'échelle DPI si pertinent
+      placeholder: "Windows 11 24H2, 2 écrans, 125 % + 100 %"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Rapport d'exécution ou extrait de journal (optionnel)
+      description: Copie du rapport affiché après exécution, ou extrait depuis le dossier des journaux (Réglages)
