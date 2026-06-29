@@ -1,5 +1,6 @@
 pub mod ancillary_panel_title;
 pub mod client_window;
+pub mod concurrent_launch;
 pub mod durable_window;
 pub mod execution_planner;
 pub mod execution_service;

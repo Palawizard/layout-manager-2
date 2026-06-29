@@ -1,11 +1,13 @@
 use std::{
     collections::HashSet,
+    sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant},
 };
 
 use crate::{
     application::{
+        concurrent_launch::{MAX_CONCURRENT_LAUNCHES, map_with_bounded_concurrency},
         execution_planner::{ExecutionPlan, PlannedLaunch},
         placement_executor::apply_planned_placement,
         unmatched_minimizer::minimize_unmatched_windows,
@@ -70,28 +72,48 @@ impl ExecutionService {
     ) -> LayoutRunReport {
         let started = Instant::now();
         let total_actions = plan.launch_steps.len();
-        let mut warnings = plan.warnings;
+        let warnings = plan.warnings;
         let mut results = Vec::with_capacity(total_actions);
         let mut matched_handles = HashSet::<NativeWindowHandle>::new();
 
         listener.on_started(&run_id, &plan.layout_name, total_actions);
 
-        for step in &plan.launch_steps {
-            if cancellation.is_cancelled() {
-                results.push(skipped_result(step.action_id(), step.label()));
-                continue;
-            }
+        let warnings = Arc::new(Mutex::new(warnings));
+        let launch_outcomes = map_with_bounded_concurrency(
+            &plan.launch_steps,
+            MAX_CONCURRENT_LAUNCHES,
+            |step| {
+                if cancellation.is_cancelled() {
+                    return (
+                        step.action_id().clone(),
+                        step.label().to_owned(),
+                        Err(skipped_result(step.action_id(), step.label())),
+                    );
+                }
+                listener.on_action_started(step.action_id(), step.label(), "launch");
+                let mut step_warnings = Vec::new();
+                let outcome = Self::launch_step(
+                    step,
+                    inventory,
+                    process_launcher,
+                    browser_launcher,
+                    cancellation,
+                    &mut step_warnings,
+                );
+                if !step_warnings.is_empty() {
+                    if let Ok(mut shared) = warnings.lock() {
+                        shared.extend(step_warnings);
+                    }
+                }
+                (
+                    step.action_id().clone(),
+                    step.label().to_owned(),
+                    outcome,
+                )
+            },
+        );
 
-            listener.on_action_started(step.action_id(), step.label(), "launch");
-            let launch_result = Self::launch_step(
-                step,
-                inventory,
-                process_launcher,
-                browser_launcher,
-                cancellation,
-                &mut warnings,
-            );
-
+        for (step, (_, _, launch_result)) in plan.launch_steps.iter().zip(launch_outcomes) {
             let resolved = match launch_result {
                 Ok(window) => window,
                 Err(result) => {
@@ -134,6 +156,11 @@ impl ExecutionService {
                 break;
             }
         }
+
+        let warnings = Arc::try_unwrap(warnings)
+            .ok()
+            .and_then(|mutex| mutex.into_inner().ok())
+            .unwrap_or_default();
 
         if !cancellation.is_cancelled()
             && plan.minimize_unmatched_windows
