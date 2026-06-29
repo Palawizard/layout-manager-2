@@ -35,11 +35,7 @@ impl Database {
             .map_err(|error| AppError::Storage(error.to_string()))?;
         fs::create_dir_all(&directory).map_err(|error| AppError::Storage(error.to_string()))?;
         let path = directory.join("layout-manager-2.sqlite");
-        let connection =
-            Connection::open(&path).map_err(|error| AppError::Storage(error.to_string()))?;
-        connection
-            .execute("PRAGMA foreign_keys = ON;", [])
-            .map_err(|error| AppError::Storage(error.to_string()))?;
+        let connection = open_connection(&path)?;
         let database = Self {
             path,
             connection: Mutex::new(connection),
@@ -74,6 +70,7 @@ impl Database {
                 if already_applied {
                     continue;
                 }
+                backup_database_file(&self.path)?;
                 connection
                     .execute_batch(migration.sql)
                     .map_err(|error| AppError::Storage(error.to_string()))?;
@@ -89,6 +86,59 @@ impl Database {
     }
 }
 
+fn open_connection(path: &Path) -> Result<Connection, AppError> {
+    match Connection::open(path) {
+        Ok(connection) => {
+            configure_connection(&connection)?;
+            Ok(connection)
+        }
+        Err(error) => {
+            tracing::warn!(path = %path.display(), %error, "database open failed, trying backup");
+            restore_database_from_backup(path)?;
+            let connection = Connection::open(path)
+                .map_err(|error| AppError::Storage(error.to_string()))?;
+            configure_connection(&connection)?;
+            Ok(connection)
+        }
+    }
+}
+
+fn configure_connection(connection: &Connection) -> Result<(), AppError> {
+    connection
+        .execute_batch(
+            "PRAGMA foreign_keys = ON;
+             PRAGMA journal_mode = WAL;
+             PRAGMA synchronous = NORMAL;",
+        )
+        .map_err(|error| AppError::Storage(error.to_string()))
+}
+
+fn backup_database_file(path: &Path) -> Result<(), AppError> {
+    if !path.is_file() {
+        return Ok(());
+    }
+    let backup_path = path.with_extension("sqlite.bak");
+    fs::copy(path, &backup_path)
+        .map(|_| ())
+        .map_err(|error| AppError::Storage(error.to_string()))
+}
+
+fn restore_database_from_backup(path: &Path) -> Result<(), AppError> {
+    let backup_path = path.with_extension("sqlite.bak");
+    if !backup_path.is_file() {
+        return Err(AppError::Storage(
+            "La base de données est illisible et aucune sauvegarde n’est disponible.".to_owned(),
+        ));
+    }
+    if path.is_file() {
+        let corrupt_path = path.with_extension("sqlite.corrupt");
+        let _ = fs::rename(path, &corrupt_path);
+    }
+    fs::copy(&backup_path, path)
+        .map(|_| ())
+        .map_err(|error| AppError::Storage(error.to_string()))
+}
+
 fn current_timestamp() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -98,9 +148,7 @@ fn current_timestamp() -> i64 {
 #[cfg(test)]
 pub(crate) fn open_in_memory_for_tests() -> Database {
     let connection = Connection::open_in_memory().expect("in-memory database");
-    connection
-        .execute("PRAGMA foreign_keys = ON;", [])
-        .expect("foreign keys");
+    configure_connection(&connection).expect("pragmas");
     let database = Database {
         path: std::env::temp_dir().join("layout-manager-test.sqlite"),
         connection: Mutex::new(connection),
@@ -111,7 +159,9 @@ pub(crate) fn open_in_memory_for_tests() -> Database {
 
 #[cfg(test)]
 mod tests {
-    use super::{Database, open_in_memory_for_tests};
+    use std::fs;
+
+    use super::{Database, backup_database_file, open_in_memory_for_tests, restore_database_from_backup};
     use crate::error::AppError;
 
     fn open_test_database() -> Database {
@@ -136,5 +186,39 @@ mod tests {
                 Ok::<(), AppError>(())
             })
             .expect("tables");
+    }
+
+    #[test]
+    fn restores_a_database_from_backup_after_corruption() {
+        let directory = std::env::temp_dir().join(format!(
+            "layout-manager-db-test-{}",
+            current_timestamp()
+        ));
+        fs::create_dir_all(&directory).expect("directory");
+        let path = directory.join("layout-manager-2.sqlite");
+        fs::write(&path, b"not-a-database").expect("corrupt file");
+        fs::write(path.with_extension("sqlite.bak"), b"not-a-database").expect("backup");
+
+        restore_database_from_backup(&path).expect("restore");
+        assert!(path.is_file());
+        assert!(directory.join("layout-manager-2.sqlite.corrupt").is_file());
+
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn creates_a_backup_before_the_first_migration() {
+        let directory = std::env::temp_dir().join(format!(
+            "layout-manager-db-backup-{}",
+            current_timestamp()
+        ));
+        fs::create_dir_all(&directory).expect("directory");
+        let path = directory.join("layout-manager-2.sqlite");
+        fs::write(&path, b"seed").expect("seed");
+
+        backup_database_file(&path).expect("backup");
+        assert!(path.with_extension("sqlite.bak").is_file());
+
+        let _ = fs::remove_dir_all(directory);
     }
 }
