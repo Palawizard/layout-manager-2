@@ -162,7 +162,7 @@ function ExecutionRunner({ layoutId, retryIds }: ExecutionRunnerProps) {
       <p className="text-sm text-muted-foreground">{layoutName}</p>
       <Card>
         <CardContent className="space-y-4 p-6">
-          <div className="flex items-center justify-between gap-4">
+          <div aria-atomic="true" aria-live="polite" className="flex items-center justify-between gap-4" role="status">
             <p className="text-sm font-medium">
               {report
                 ? describeRunStatus(report.status)

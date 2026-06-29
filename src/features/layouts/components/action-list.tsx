@@ -57,7 +57,7 @@ export function ActionList({
 
   return (
     <>
-      <ul className="space-y-3">
+      <ul aria-label="Actions du layout" className="space-y-3" role="list">
         {actions.map((action, index) => (
           <li
             className="flex items-center justify-between gap-3 rounded-md border border-border p-3"

@@ -11,6 +11,9 @@ const navigationItems = [
 export function AppLayout() {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <a className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:font-medium" href="#main-content">
+        Aller au contenu
+      </a>
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex h-16 max-w-6xl items-center px-6">
           <span className="text-base font-semibold tracking-tight">Layout Manager 2</span>
@@ -34,7 +37,7 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <main className="min-w-0">
+        <main className="min-w-0" id="main-content" tabIndex={-1}>
           <Outlet />
         </main>
       </div>
