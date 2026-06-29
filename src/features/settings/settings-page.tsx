@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
 import {
@@ -8,8 +10,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../components/ui/dialog";
+import { getAppInfo, type AppInfo } from "../../lib/tauri/app-info";
 
 export function SettingsPage() {
+  const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getAppInfo()
+      .then((info) => {
+        if (active) setAppInfo(info);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <section aria-labelledby="settings-title">
       <div className="mb-8">
@@ -23,7 +40,9 @@ export function SettingsPage() {
       <Card>
         <CardHeader>
           <h2 className="font-medium">À propos</h2>
-          <p className="text-sm text-muted-foreground">Layout Manager 2</p>
+          <p className="text-sm text-muted-foreground">
+            Layout Manager 2{appInfo ? ` · Version ${appInfo.version}` : ""}
+          </p>
         </CardHeader>
         <CardContent>
           <Dialog>
