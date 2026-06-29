@@ -168,4 +168,73 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn converts_bounds_on_a_secondary_monitor_at_150_percent_scale() {
+        let bounds = NormalizedBounds::new(0.0, 0.0, 0.5, 1.0).expect("valid bounds");
+        let area = WorkArea {
+            x: 2560,
+            y: 0,
+            width: 2560,
+            height: 1440,
+        };
+
+        assert_eq!(
+            bounds.to_pixels(area),
+            PixelBounds {
+                x: 2560,
+                y: 0,
+                width: 1280,
+                height: 1440,
+            }
+        );
+    }
+
+    #[test]
+    fn keeps_full_height_when_work_areas_differ_between_monitors() {
+        let primary = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1032,
+        };
+        let secondary = WorkArea {
+            x: -1920,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let preset = NormalizedBounds::new(0.0, 0.0, 1.0, 1.0).expect("full screen");
+
+        assert_eq!(
+            preset.to_pixels(primary).height,
+            primary.height
+        );
+        assert_eq!(
+            preset.to_pixels(secondary).height,
+            secondary.height
+        );
+    }
+
+    #[test]
+    fn clamps_window_inside_a_negative_coordinate_monitor() {
+        let area = WorkArea {
+            x: -3840,
+            y: -40,
+            width: 1920,
+            height: 1040,
+        };
+        let oversized = PixelBounds {
+            x: -4000,
+            y: -200,
+            width: 3000,
+            height: 2000,
+        };
+
+        let clamped = oversized.clamp_to(area);
+        assert_eq!(clamped.x, area.x);
+        assert_eq!(clamped.y, area.y);
+        assert_eq!(clamped.width, area.width);
+        assert_eq!(clamped.height, area.height);
+    }
 }

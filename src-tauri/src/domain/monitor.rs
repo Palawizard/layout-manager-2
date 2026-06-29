@@ -105,4 +105,42 @@ mod tests {
         assert_eq!(selection.monitor.id.0, "primary");
         assert!(selection.used_fallback);
     }
+
+    #[test]
+    fn falls_back_to_first_available_with_mixed_dpi_work_areas() {
+        let monitors = [
+            Monitor {
+                id: MonitorId("left".to_owned()),
+                name: "left".to_owned(),
+                work_area: WorkArea {
+                    x: -2560,
+                    y: 0,
+                    width: 2560,
+                    height: 1440,
+                },
+                scale_factor: 1.5,
+                is_primary: false,
+            },
+            Monitor {
+                id: MonitorId("primary".to_owned()),
+                name: "primary".to_owned(),
+                work_area: WorkArea {
+                    x: 0,
+                    y: 0,
+                    width: 1920,
+                    height: 1080,
+                },
+                scale_factor: 1.25,
+                is_primary: true,
+            },
+        ];
+        let selector = MonitorSelector {
+            preferred_id: MonitorId("disconnected".to_owned()),
+            fallback: MonitorFallback::FirstAvailable,
+        };
+
+        let selection = selector.resolve(&monitors).expect("fallback available");
+        assert_eq!(selection.monitor.id.0, "left");
+        assert!(selection.used_fallback);
+    }
 }
