@@ -16,13 +16,7 @@ import type {
   RunCompletedEvent,
   RunStartedEvent,
 } from "./types/execution";
-
-const STATUS_LABELS: Record<LayoutRunReport["status"], string> = {
-  success: "Layout appliqué",
-  partial_failure: "Certaines actions n’ont pas abouti",
-  failed: "Le layout n’a pas pu être appliqué",
-  cancelled: "Exécution annulée",
-};
+import { describeRunStatus, getRetryableActionIds } from "./lib/retry";
 
 const ACTION_STATUS_LABELS: Record<ActionRunResult["status"], string> = {
   pending: "En attente",
@@ -130,16 +124,13 @@ function ExecutionRunner({ layoutId, retryIds }: ExecutionRunnerProps) {
   }
 
   function handleRetryFailed() {
-    const failedIds =
-      report?.results
-        .filter((result) => result.status === "failed" && result.retryable)
-        .map((result) => result.actionId) ?? [];
+    if (!report) return;
+    const failedIds = getRetryableActionIds(report);
     if (failedIds.length === 0) return;
     navigate(`/execution?layoutId=${layoutId}&retry=${failedIds.join(",")}`);
   }
 
-  const failedRetryableCount =
-    report?.results.filter((result) => result.status === "failed" && result.retryable).length ?? 0;
+  const failedRetryableCount = report ? getRetryableActionIds(report).length : 0;
 
   if (status === "error") {
     return (
@@ -162,7 +153,7 @@ function ExecutionRunner({ layoutId, retryIds }: ExecutionRunnerProps) {
           <div className="flex items-center justify-between gap-4">
             <p className="text-sm font-medium">
               {report
-                ? STATUS_LABELS[report.status]
+                ? describeRunStatus(report.status)
                 : currentLabel
                   ? `Traitement de ${currentLabel}`
                   : "Préparation du layout"}
