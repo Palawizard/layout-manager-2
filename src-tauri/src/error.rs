@@ -9,6 +9,8 @@ pub enum AppError {
     Validation(String),
     #[error("the requested resource was not found")]
     NotFound,
+    #[error("storage error: {0}")]
+    Storage(String),
     #[error("an internal error occurred")]
     Internal,
 }
@@ -36,6 +38,12 @@ impl From<AppError> for PublicError {
                 message: "Élément introuvable.".to_owned(),
                 field: None,
                 retryable: false,
+            },
+            AppError::Storage(_) => Self {
+                code: "storage_error",
+                message: "Les données n’ont pas pu être enregistrées.".to_owned(),
+                field: None,
+                retryable: true,
             },
             AppError::Internal => Self {
                 code: "internal_error",

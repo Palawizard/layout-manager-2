@@ -5,12 +5,19 @@ pub mod error;
 mod infrastructure;
 mod logging;
 
+use tauri::Manager;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     logging::initialize();
     tracing::info!(version = env!("CARGO_PKG_VERSION"), "application starting");
 
     tauri::Builder::default()
+        .setup(|app| {
+            let database = infrastructure::persistence::Database::open(app.handle())?;
+            app.manage(database);
+            Ok(())
+        })
         .manage(infrastructure::windows::Win32WindowSystem::new())
         .invoke_handler(tauri::generate_handler![
             commands::app_info::get_app_info,

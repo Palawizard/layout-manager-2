@@ -1,4 +1,4 @@
 mod browser;
-mod persistence;
+pub(crate) mod persistence;
 mod process;
 pub(crate) mod windows;
