@@ -1,4 +1,5 @@
 import type { Layout, LayoutAction, LayoutOptions, WindowPlacement } from "../types/layout";
+import { applyPlacementPreset } from "./placement-presets";
 
 export const defaultLayoutOptions: LayoutOptions = {
   minimizeUnmatchedWindows: false,
@@ -7,11 +8,14 @@ export const defaultLayoutOptions: LayoutOptions = {
 };
 
 export function createDefaultPlacement(monitorId = "primary"): WindowPlacement {
-  return {
-    monitorSelector: { preferredId: monitorId, fallback: "primary" },
-    bounds: { x: 0, y: 0, width: 1, height: 1 },
-    state: "normal",
-  };
+  return applyPlacementPreset(
+    {
+      monitorSelector: { preferredId: monitorId, fallback: "primary" },
+      bounds: { x: 0, y: 0, width: 1, height: 1 },
+      state: "normal",
+    },
+    "fullScreen",
+  );
 }
 
 export function createEmptyLayout(): Layout {

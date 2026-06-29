@@ -51,6 +51,17 @@ const layoutActionSchema = z.discriminatedUnion("kind", [
       { message: "Sélectionnez une fenêtre à retrouver." },
     ),
     placement: windowPlacementSchema,
+    executablePath: z.string().nullable(),
+    reopenIfAbsent: z.boolean(),
+    startupTimeoutMs: z.number().int().min(1000).max(120_000),
+  }).superRefine((action, context) => {
+    if (action.reopenIfAbsent && !action.executablePath) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choisissez une fenêtre pour enregistrer l’application à relancer.",
+        path: ["windowMatcher"],
+      });
+    }
   }),
   z.object({
     kind: z.literal("open_browser_window"),

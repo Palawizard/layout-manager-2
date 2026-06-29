@@ -1,32 +1,13 @@
-use std::process::Command;
+use crate::domain::ports::{ProcessLaunchError, ProcessLaunchRequest, ProcessLauncher};
 
-use crate::domain::ports::{
-    LaunchedProcess, ProcessLaunchError, ProcessLaunchRequest, ProcessLauncher,
-};
+use super::spawn_detached::spawn_detached;
 
 #[derive(Debug, Default)]
 pub struct WindowsProcessLauncher;
 
 impl ProcessLauncher for WindowsProcessLauncher {
-    fn launch(&self, request: ProcessLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError> {
-        if !std::path::Path::new(&request.executable_path).is_file() {
-            return Err(ProcessLaunchError::ExecutableNotFound);
-        }
-        let mut command = Command::new(&request.executable_path);
-        command.args(&request.arguments);
-        if let Some(directory) = &request.working_directory {
-            command.current_dir(directory);
-        }
-        let child = command.spawn().map_err(|error| {
-            if error.kind() == std::io::ErrorKind::NotFound {
-                ProcessLaunchError::ExecutableNotFound
-            } else {
-                ProcessLaunchError::LaunchFailed(error.to_string())
-            }
-        })?;
-        Ok(LaunchedProcess {
-            process_id: child.id(),
-        })
+    fn launch(&self, request: ProcessLaunchRequest) -> Result<crate::domain::ports::LaunchedProcess, ProcessLaunchError> {
+        spawn_detached(request)
     }
 }
 

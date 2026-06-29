@@ -47,6 +47,7 @@ pub struct ExecutionService;
 struct ResolvedWindow {
     handle: NativeWindowHandle,
     reused: bool,
+    relaunched: bool,
 }
 
 impl ExecutionService {
@@ -98,8 +99,11 @@ impl ExecutionService {
             };
 
             listener.on_action_started(step.action_id(), step.label(), "placement");
-            let placement_result =
+            let mut placement_result =
                 apply_planned_placement(step, controller, resolved.handle, resolved.reused);
+            if resolved.relaunched && placement_result.status == ActionRunStatus::Succeeded {
+                placement_result.message = Some("Application relancée.".to_owned());
+            }
             listener.on_action_completed(&placement_result);
             let should_stop =
                 placement_result_needs_stop(&placement_result, plan.options.continue_on_error);
@@ -153,23 +157,66 @@ impl ExecutionService {
                 action_id,
                 label,
                 window_matcher,
+                executable_path,
+                reopen_if_absent,
+                startup_timeout_ms,
                 ..
-            } => {
-                let window = find_existing_window(inventory, window_matcher)
-                    .map_err(|error| failed_result(action_id, label, wait_error_message(error), true))?
-                    .ok_or_else(|| {
-                        failed_result(
-                            action_id,
-                            label,
-                            "Fenêtre introuvable.".to_owned(),
-                            true,
-                        )
-                    })?;
-                Ok(ResolvedWindow {
+            } => match find_existing_window(inventory, window_matcher) {
+                Ok(Some(window)) => Ok(ResolvedWindow {
                     handle: window.handle,
                     reused: true,
-                })
-            }
+                    relaunched: false,
+                }),
+                Ok(None) if !reopen_if_absent => Err(failed_result(
+                    action_id,
+                    label,
+                    "Fenêtre introuvable.".to_owned(),
+                    true,
+                )),
+                Ok(None) => {
+                    let Some(path) = executable_path else {
+                        return Err(failed_result(
+                            action_id,
+                            label,
+                            "Fenêtre introuvable et aucun exécutable enregistré pour la réouvrir."
+                                .to_owned(),
+                            true,
+                        ));
+                    };
+                    let previous_handles = snapshot_handles(inventory);
+                    let launched = process_launcher
+                        .launch(ProcessLaunchRequest {
+                            executable_path: path.clone(),
+                            arguments: Vec::new(),
+                            working_directory: None,
+                        })
+                        .map_err(|error| {
+                            failed_result(action_id, label, launch_error_message(error), false)
+                        })?;
+                    let window = wait_for_window(
+                        inventory,
+                        window_matcher,
+                        &previous_handles,
+                        Some(launched.process_id),
+                        *startup_timeout_ms,
+                        cancellation,
+                    )
+                    .map_err(|error| {
+                        failed_result(action_id, label, wait_error_message(error), true)
+                    })?;
+                    Ok(ResolvedWindow {
+                        handle: window.handle,
+                        reused: false,
+                        relaunched: true,
+                    })
+                }
+                Err(error) => Err(failed_result(
+                    action_id,
+                    label,
+                    wait_error_message(error),
+                    true,
+                )),
+            },
             PlannedLaunch::Application {
                 action_id,
                 label,
@@ -191,6 +238,7 @@ impl ExecutionService {
                     return Ok(ResolvedWindow {
                         handle: window.handle,
                         reused: true,
+                        relaunched: false,
                     });
                 }
 
@@ -218,6 +266,7 @@ impl ExecutionService {
                 Ok(ResolvedWindow {
                     handle: window.handle,
                     reused: false,
+                    relaunched: false,
                 })
             }
             PlannedLaunch::Browser {
@@ -272,6 +321,7 @@ impl ExecutionService {
                 Ok(ResolvedWindow {
                     handle: window.handle,
                     reused: false,
+                    relaunched: false,
                 })
             }
         }
@@ -395,6 +445,9 @@ mod tests {
                         ..Default::default()
                     },
                     placement: placement(),
+                    executable_path: None,
+                    reopen_if_absent: false,
+                    startup_timeout_ms: 15_000,
                 },
                 LayoutAction::PlaceExistingWindow {
                     id: LayoutActionId("present".to_owned()),
@@ -403,6 +456,9 @@ mod tests {
                         ..Default::default()
                     },
                     placement: placement(),
+                    executable_path: None,
+                    reopen_if_absent: false,
+                    startup_timeout_ms: 15_000,
                 },
             ],
             options: LayoutOptions {

@@ -85,6 +85,9 @@ pub fn wait_for_window(
 ) -> Result<DesktopWindow, WaitError> {
     let deadline = Instant::now() + Duration::from_millis(u64::from(timeout_ms));
     let mut delay_ms = 50u64;
+    let mut stable_handle: Option<NativeWindowHandle> = None;
+    let mut stable_since: Option<Instant> = None;
+    let stable_duration = Duration::from_millis(500);
 
     loop {
         if cancellation.is_cancelled() {
@@ -102,15 +105,21 @@ pub fn wait_for_window(
             previous_handles: previous_handles.clone(),
         };
         match select_window(matcher, &windows, &context) {
-            Ok(window) => return Ok(window.clone()),
-            Err(WindowMatchError::NotFound) => {}
-            Err(WindowMatchError::Ambiguous) => return Err(WaitError::Ambiguous),
-            Err(WindowMatchError::InstanceNotFound { requested, available }) => {
-                return Err(WaitError::InstanceNotFound {
-                    requested,
-                    available,
-                });
+            Ok(window) => {
+                if stable_handle == Some(window.handle) {
+                    if stable_since.is_some_and(|started| started.elapsed() >= stable_duration) {
+                        return Ok(window.clone());
+                    }
+                } else {
+                    stable_handle = Some(window.handle);
+                    stable_since = Some(Instant::now());
+                }
             }
+            Err(WindowMatchError::NotFound) | Err(WindowMatchError::InstanceNotFound { .. }) => {
+                stable_handle = None;
+                stable_since = None;
+            }
+            Err(WindowMatchError::Ambiguous) => return Err(WaitError::Ambiguous),
         }
 
         thread::sleep(Duration::from_millis(delay_ms));
@@ -169,6 +178,84 @@ mod tests {
             state: WindowState::Normal,
             monitor_id: None,
         }
+    }
+
+    #[test]
+    fn waits_for_a_durable_window_after_a_transient_launch_window() {
+        struct PhasedInventory {
+            calls: std::sync::Mutex<usize>,
+            transient: DesktopWindow,
+            durable: DesktopWindow,
+        }
+
+        impl crate::domain::ports::WindowInventory for PhasedInventory {
+            fn list_windows(
+                &self,
+            ) -> Result<Vec<DesktopWindow>, crate::domain::ports::NativeError> {
+                let mut calls = self.calls.lock().expect("calls");
+                *calls += 1;
+                if *calls < 4 {
+                    Ok(vec![self.transient.clone()])
+                } else {
+                    Ok(vec![self.durable.clone()])
+                }
+            }
+        }
+
+        let transient = DesktopWindow {
+            handle: NativeWindowHandle(1),
+            process_id: 10,
+            executable_path: Some("C:\\Apps\\Discord.exe".to_owned()),
+            process_name: Some("Discord.exe".to_owned()),
+            title: "Discord Updater".to_owned(),
+            class_name: "Chrome_WidgetWin_1".to_owned(),
+            bounds: PixelBounds {
+                x: 0,
+                y: 0,
+                width: 360,
+                height: 240,
+            },
+            state: WindowState::Normal,
+            monitor_id: None,
+        };
+        let durable = DesktopWindow {
+            handle: NativeWindowHandle(2),
+            process_id: 20,
+            executable_path: Some("C:\\Apps\\Discord.exe".to_owned()),
+            process_name: Some("Discord.exe".to_owned()),
+            title: "Friends - Discord".to_owned(),
+            class_name: "Chrome_WidgetWin_1".to_owned(),
+            bounds: PixelBounds {
+                x: 0,
+                y: 0,
+                width: 1280,
+                height: 800,
+            },
+            state: WindowState::Normal,
+            monitor_id: None,
+        };
+        let inventory = PhasedInventory {
+            calls: std::sync::Mutex::new(0),
+            transient,
+            durable: durable.clone(),
+        };
+        let matcher = WindowMatcher {
+            process_name: Some("Discord.exe".to_owned()),
+            class_name: Some("Chrome_WidgetWin_1".to_owned()),
+            ..Default::default()
+        };
+
+        let found = wait_for_window(
+            &inventory,
+            &matcher,
+            &HashSet::new(),
+            Some(20),
+            5_000,
+            &NeverCancelled,
+        )
+        .expect("durable window appears");
+        assert_eq!(found.handle, durable.handle);
+        assert_eq!(found.title, "Friends - Discord");
     }
 
     #[test]

@@ -58,6 +58,9 @@ export type LayoutAction =
       id: string;
       windowMatcher: WindowMatcher;
       placement: WindowPlacement;
+      executablePath: string | null;
+      reopenIfAbsent: boolean;
+      startupTimeoutMs: number;
     }
   | {
       kind: "open_browser_window";

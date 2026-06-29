@@ -1,5 +1,5 @@
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -21,7 +21,19 @@ const browserLabels: Record<BrowserKind, string> = {
   system_default: "Navigateur par défaut",
 };
 
+function useStableRowKeys(count: number): string[] {
+  const keysRef = useRef<string[]>([]);
+  while (keysRef.current.length < count) {
+    keysRef.current.push(crypto.randomUUID());
+  }
+  if (keysRef.current.length > count) {
+    keysRef.current.length = count;
+  }
+  return keysRef.current;
+}
+
 export function BrowserActionEditor({ action, onChange }: BrowserActionEditorProps) {
+  const urlRowKeys = useStableRowKeys(action.urls.length);
   const [availableBrowsers, setAvailableBrowsers] = useState<BrowserKind[]>([
     "edge",
     "chrome",
@@ -72,7 +84,7 @@ export function BrowserActionEditor({ action, onChange }: BrowserActionEditorPro
       <div className="space-y-2">
         <Label>Adresses web</Label>
         {action.urls.map((url, index) => (
-          <div className="flex gap-2" key={`${index}-${url}`}>
+          <div className="flex gap-2" key={urlRowKeys[index]}>
             <Input
               onChange={(event) => {
                 const urls = [...action.urls];

@@ -29,6 +29,9 @@ export function ExistingWindowActionEditor({ action, onChange }: ExistingWindowA
             Choisir
           </Button>
         </div>
+        {action.executablePath ? (
+          <p className="mt-2 truncate text-xs text-muted-foreground">{action.executablePath}</p>
+        ) : null}
       </div>
       <div>
         <Label htmlFor="title-pattern">Titre à retrouver (facultatif)</Label>
@@ -66,14 +69,39 @@ export function ExistingWindowActionEditor({ action, onChange }: ExistingWindowA
           value={action.windowMatcher.instanceIndex ?? ""}
         />
       </div>
+      <div className="flex items-start gap-3 rounded-md border border-border p-4">
+        <input
+          checked={!action.reopenIfAbsent}
+          className="mt-1 size-4 rounded border-border"
+          id="skip-reopen-if-absent"
+          onChange={(event) =>
+            onChange({
+              ...action,
+              reopenIfAbsent: !event.target.checked,
+            })
+          }
+          type="checkbox"
+        />
+        <div>
+          <Label htmlFor="skip-reopen-if-absent">Ne pas réouvrir si absente</Label>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Si l’application est fermée, elle sera relancée automatiquement avant le placement,
+            sauf si cette option est cochée.
+          </p>
+        </div>
+      </div>
       <PlacementSelector
         onChange={(placement) => onChange({ ...action, placement })}
         value={action.placement ?? createDefaultPlacement()}
       />
       <WindowPicker
         onOpenChange={setPickerOpen}
-        onSelect={(_window, matcher) => {
-          onChange({ ...action, windowMatcher: matcher });
+        onSelect={(window, matcher) => {
+          onChange({
+            ...action,
+            windowMatcher: matcher,
+            executablePath: window.executablePath,
+          });
           setPickerOpen(false);
         }}
         open={pickerOpen}

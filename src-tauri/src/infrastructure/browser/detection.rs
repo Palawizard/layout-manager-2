@@ -31,6 +31,22 @@ pub fn detect_installed_browsers() -> Vec<InstalledBrowser> {
     browsers
 }
 
+#[must_use]
+pub fn infer_browser_kind_from_executable(executable_path: &str) -> BrowserKind {
+    let file_name = std::path::Path::new(executable_path)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .map(str::to_ascii_lowercase)
+        .unwrap_or_default();
+
+    match file_name.as_str() {
+        "firefox.exe" => BrowserKind::Firefox,
+        "chrome.exe" => BrowserKind::Chrome,
+        "msedge.exe" => BrowserKind::Edge,
+        _ => BrowserKind::SystemDefault,
+    }
+}
+
 pub fn resolve_browser_executable(
     kind: BrowserKind,
     override_path: Option<&str>,
@@ -158,6 +174,25 @@ mod tests {
                 "\"C:\\Program Files\\Browser\\browser.exe\" \"%1\""
             ),
             Some("C:\\Program Files\\Browser\\browser.exe".to_owned())
+        );
+    }
+
+    #[test]
+    fn infers_browser_kind_from_executable_name() {
+        use super::infer_browser_kind_from_executable;
+        use crate::domain::layout::BrowserKind;
+
+        assert_eq!(
+            infer_browser_kind_from_executable("C:\\Program Files\\Mozilla Firefox\\firefox.exe"),
+            BrowserKind::Firefox
+        );
+        assert_eq!(
+            infer_browser_kind_from_executable("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"),
+            BrowserKind::Chrome
+        );
+        assert_eq!(
+            infer_browser_kind_from_executable("C:\\Program Files\\Unknown\\browser.exe"),
+            BrowserKind::SystemDefault
         );
     }
 

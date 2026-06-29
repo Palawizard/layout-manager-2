@@ -3,7 +3,10 @@ use std::collections::HashSet;
 use regex::Regex;
 use thiserror::Error;
 
-use crate::domain::window::{DesktopWindow, NativeWindowHandle, WindowMatcher};
+use crate::{
+    application::durable_window::{is_transient_launch_window, window_area},
+    domain::window::{DesktopWindow, NativeWindowHandle, WindowMatcher},
+};
 
 #[derive(Debug, Default)]
 pub struct MatchContext {
@@ -76,6 +79,10 @@ pub fn rank_window_matches<'a>(
         right
             .score
             .cmp(&left.score)
+            .then_with(|| {
+                window_area(right.window)
+                    .cmp(&window_area(left.window))
+            })
             .then_with(|| left.window.process_id.cmp(&right.window.process_id))
     });
     ranked
@@ -87,6 +94,9 @@ fn score_window<'a>(
     context: &MatchContext,
     title_regex: Option<&Regex>,
 ) -> Option<RankedWindow<'a>> {
+    if is_transient_launch_window(window, matcher) {
+        return None;
+    }
     if matcher.process_name.as_ref().is_some_and(|expected| {
         window
             .process_name
@@ -118,6 +128,7 @@ fn score_window<'a>(
     score += u32::from(matcher.process_name.is_some()) * 20;
     score += u32::from(matcher.class_name.is_some()) * 15;
     score += u32::from(matcher.title_pattern.is_some()) * 10;
+    score += ((window_area(window) / 10_000).min(100)) as u32;
     Some(RankedWindow { window, score })
 }
 
@@ -288,6 +299,46 @@ mod tests {
                 requested: 1,
                 available: 1,
             })
+        );
+    }
+
+    #[test]
+    fn prefers_a_larger_durable_window_over_a_transient_launch_window() {
+        let windows = [
+            DesktopWindow {
+                bounds: PixelBounds {
+                    x: 0,
+                    y: 0,
+                    width: 360,
+                    height: 240,
+                },
+                ..electron_window(
+                    1,
+                    10,
+                    "Discord Updater",
+                    "Discord.exe",
+                    "C:\\Apps\\Discord\\Discord.exe",
+                )
+            },
+            electron_window(
+                2,
+                20,
+                "Friends - Discord",
+                "Discord.exe",
+                "C:\\Apps\\Discord\\Discord.exe",
+            ),
+        ];
+        let matcher = WindowMatcher {
+            process_name: Some("Discord.exe".to_owned()),
+            class_name: Some("Chrome_WidgetWin_1".to_owned()),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            select_window(&matcher, &windows, &MatchContext::default())
+                .expect("main window")
+                .title,
+            "Friends - Discord"
         );
     }
 

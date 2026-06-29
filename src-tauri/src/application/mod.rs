@@ -1,3 +1,4 @@
+pub mod durable_window;
 pub mod execution_planner;
 pub mod execution_service;
 pub mod layout_service;

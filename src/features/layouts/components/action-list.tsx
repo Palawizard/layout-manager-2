@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "../../../components/ui/button";
 import {
@@ -18,6 +18,8 @@ interface ActionListProps {
   actions: LayoutAction[];
   editingIndex: number | null;
   onChange: (actions: LayoutAction[]) => void;
+  onCancelEdit: () => void;
+  onConfirmEdit: () => void;
   onEditingIndexChange: (index: number | null) => void;
 }
 
@@ -31,9 +33,17 @@ export function ActionList({
   actions,
   editingIndex,
   onChange,
+  onCancelEdit,
+  onConfirmEdit,
   onEditingIndexChange,
 }: ActionListProps) {
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
+  const closingAfterConfirmRef = useRef(false);
+
+  function confirmEdit() {
+    closingAfterConfirmRef.current = true;
+    onConfirmEdit();
+  }
 
   function moveAction(index: number, direction: -1 | 1) {
     const target = index + direction;
@@ -108,7 +118,17 @@ export function ActionList({
       </ul>
 
       <Dialog
-        onOpenChange={(open) => !open && onEditingIndexChange(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            if (closingAfterConfirmRef.current) {
+              closingAfterConfirmRef.current = false;
+              return;
+            }
+            if (editingIndex !== null) {
+              onCancelEdit();
+            }
+          }
+        }}
         open={editingIndex !== null}
       >
         <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
@@ -133,10 +153,10 @@ export function ActionList({
             />
           )}
           <div className="mt-6 flex justify-end gap-2">
-            <Button onClick={() => onEditingIndexChange(null)} variant="secondary">
+            <Button onClick={onCancelEdit} variant="secondary">
               Annuler
             </Button>
-            <Button onClick={() => onEditingIndexChange(null)}>Enregistrer</Button>
+            <Button onClick={confirmEdit}>Enregistrer</Button>
           </div>
         </DialogContent>
       </Dialog>

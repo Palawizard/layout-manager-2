@@ -245,6 +245,9 @@ mod tests {
                         ..Default::default()
                     },
                     placement: sample_placement(),
+                    executable_path: Some("C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe".to_owned()),
+                    reopen_if_absent: true,
+                    startup_timeout_ms: 15_000,
                 },
                 LayoutAction::OpenBrowserWindow {
                     id: LayoutActionId("action-3".to_owned()),

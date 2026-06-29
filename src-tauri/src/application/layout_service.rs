@@ -113,11 +113,17 @@ fn regenerate_action_id(action: LayoutAction) -> LayoutAction {
         LayoutAction::PlaceExistingWindow {
             window_matcher,
             placement,
+            executable_path,
+            reopen_if_absent,
+            startup_timeout_ms,
             ..
         } => LayoutAction::PlaceExistingWindow {
             id,
             window_matcher,
             placement,
+            executable_path,
+            reopen_if_absent,
+            startup_timeout_ms,
         },
         LayoutAction::OpenBrowserWindow {
             browser_kind,
@@ -201,6 +207,9 @@ mod tests {
                     state: crate::domain::window::WindowState::Normal,
                     center_scale: None,
                 },
+                executable_path: Some("C:\\Windows\\System32\\notepad.exe".to_owned()),
+                reopen_if_absent: true,
+                startup_timeout_ms: 15_000,
             }],
             options: LayoutOptions::default(),
             created_at: 0,

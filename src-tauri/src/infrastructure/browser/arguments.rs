@@ -22,12 +22,30 @@ fn build_chromium_arguments(urls: &[String], profile: Option<&str>) -> Vec<Strin
 }
 
 fn build_firefox_arguments(urls: &[String], profile: Option<&str>) -> Vec<String> {
-    let mut arguments = vec!["-new-window".to_owned()];
+    let mut arguments = Vec::new();
     if let Some(profile_name) = profile.filter(|value| !value.trim().is_empty()) {
         arguments.push("-P".to_owned());
         arguments.push(profile_name.to_owned());
     }
-    arguments.extend(urls.iter().cloned());
+
+    match urls.len() {
+        0 => {}
+        1 => {
+            arguments.push("-new-window".to_owned());
+            arguments.push(urls[0].clone());
+        }
+        _ => {
+            // With an existing Firefox instance, `-new-window` only applies to the first bare
+            // URL; additional URLs open in the already-running window. Pair each URL with
+            // `-url` so every tab lands in the same new window.
+            arguments.push("-new-window".to_owned());
+            for url in urls {
+                arguments.push("-url".to_owned());
+                arguments.push(url.clone());
+            }
+        }
+    }
+
     arguments
 }
 
@@ -56,7 +74,7 @@ mod tests {
     }
 
     #[test]
-    fn builds_firefox_arguments_for_a_new_window() {
+    fn builds_firefox_arguments_for_a_single_url() {
         assert_eq!(
             build_browser_arguments(
                 BrowserKind::Firefox,
@@ -64,10 +82,31 @@ mod tests {
                 Some("work"),
             ),
             vec![
-                "-new-window".to_owned(),
                 "-P".to_owned(),
                 "work".to_owned(),
+                "-new-window".to_owned(),
                 "https://example.com".to_owned()
+            ]
+        );
+    }
+
+    #[test]
+    fn builds_firefox_arguments_for_multiple_urls_in_one_new_window() {
+        assert_eq!(
+            build_browser_arguments(
+                BrowserKind::Firefox,
+                &[
+                    "https://one.example".to_owned(),
+                    "https://two.example".to_owned()
+                ],
+                None,
+            ),
+            vec![
+                "-new-window".to_owned(),
+                "-url".to_owned(),
+                "https://one.example".to_owned(),
+                "-url".to_owned(),
+                "https://two.example".to_owned()
             ]
         );
     }

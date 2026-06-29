@@ -41,6 +41,9 @@ pub enum PlannedLaunch {
         action_id: LayoutActionId,
         label: String,
         window_matcher: WindowMatcher,
+        executable_path: Option<String>,
+        reopen_if_absent: bool,
+        startup_timeout_ms: u32,
         placement: ResolvedPlacement,
     },
     Browser {
@@ -131,6 +134,7 @@ pub fn build_execution_plan(layout: &Layout, monitors: &[Monitor]) -> Result<Exe
                 id,
                 window_matcher,
                 placement,
+                ..
             } => (
                 id.clone(),
                 human_label_from_matcher(window_matcher),
@@ -182,11 +186,18 @@ pub fn build_execution_plan(layout: &Layout, monitors: &[Monitor]) -> Result<Exe
                 startup_timeout_ms: *startup_timeout_ms,
             },
             LayoutAction::PlaceExistingWindow {
-                window_matcher, ..
+                window_matcher,
+                executable_path,
+                reopen_if_absent,
+                startup_timeout_ms,
+                ..
             } => PlannedLaunch::ExistingWindow {
                 action_id,
                 label,
                 window_matcher: window_matcher.clone(),
+                executable_path: executable_path.clone(),
+                reopen_if_absent: *reopen_if_absent,
+                startup_timeout_ms: *startup_timeout_ms,
                 placement: resolved,
             },
             LayoutAction::OpenBrowserWindow {
@@ -332,6 +343,9 @@ mod tests {
                     ..Default::default()
                 },
                 placement: sample_placement(),
+                executable_path: Some("C:\\Windows\\System32\\notepad.exe".to_owned()),
+                reopen_if_absent: true,
+                startup_timeout_ms: 15_000,
             }],
             options: LayoutOptions::default(),
             created_at: 0,

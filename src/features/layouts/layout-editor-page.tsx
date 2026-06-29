@@ -15,6 +15,7 @@ import { getLayout, saveLayout } from "../../lib/tauri/layouts";
 import { ActionList } from "./components/action-list";
 import { LayoutDetailsForm } from "./components/layout-details-form";
 import { createDefaultPlacement } from "./lib/defaults";
+import { normalizeLayout } from "./lib/normalize-layout";
 import { layoutDraftSchema } from "./schemas/layout-schema";
 import { useEditorStore } from "./stores/editor-store";
 import type { LayoutAction } from "./types/layout";
@@ -57,6 +58,9 @@ function createAction(kind: LayoutAction["kind"]): LayoutAction {
           instanceIndex: null,
         },
         placement,
+        executablePath: null,
+        reopenIfAbsent: true,
+        startupTimeoutMs: 15_000,
       };
     case "open_browser_window":
       return {
@@ -80,6 +84,7 @@ export function LayoutEditorPage() {
   const [status, setStatus] = useState<"loading" | "ready">(() => (isNew ? "ready" : "loading"));
   const [isSaving, setIsSaving] = useState(false);
   const [editingActionIndex, setEditingActionIndex] = useState<number | null>(null);
+  const [pendingNewActionId, setPendingNewActionId] = useState<string | null>(null);
   const blocker = useBlocker(isDirty && !isSaving);
   const leaveOpen = blocker.state === "blocked";
 
@@ -93,7 +98,7 @@ export function LayoutEditorPage() {
     void getLayout(layoutId)
       .then((layout) => {
         if (!active) return;
-        setDraft(layout, true);
+        setDraft(normalizeLayout(layout), true);
         setStatus("ready");
       })
       .catch(() => {
@@ -111,10 +116,27 @@ export function LayoutEditorPage() {
       const newAction = createAction(kind);
       const nextActions = [...draft.actions, newAction];
       setActions(nextActions);
+      setPendingNewActionId(newAction.id);
       setEditingActionIndex(nextActions.length - 1);
     },
     [draft.actions, setActions],
   );
+
+  const cancelActionEdit = useCallback(() => {
+    if (editingActionIndex !== null && pendingNewActionId) {
+      const action = draft.actions[editingActionIndex];
+      if (action?.id === pendingNewActionId) {
+        setActions(draft.actions.filter((_, index) => index !== editingActionIndex));
+      }
+    }
+    setPendingNewActionId(null);
+    setEditingActionIndex(null);
+  }, [draft.actions, editingActionIndex, pendingNewActionId, setActions]);
+
+  const confirmActionEdit = useCallback(() => {
+    setPendingNewActionId(null);
+    setEditingActionIndex(null);
+  }, []);
 
   const save = useCallback(async () => {
     const parsed = layoutDraftSchema.safeParse({
@@ -222,7 +244,9 @@ export function LayoutEditorPage() {
               <ActionList
                 actions={draft.actions}
                 editingIndex={editingActionIndex}
+                onCancelEdit={cancelActionEdit}
                 onChange={setActions}
+                onConfirmEdit={confirmActionEdit}
                 onEditingIndexChange={setEditingActionIndex}
               />
             )}

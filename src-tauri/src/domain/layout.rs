@@ -11,6 +11,7 @@ pub const LAYOUT_NAME_MAX_LEN: usize = 80;
 pub const LAYOUT_DESCRIPTION_MAX_LEN: usize = 300;
 pub const STARTUP_TIMEOUT_MIN_MS: u32 = 1_000;
 pub const STARTUP_TIMEOUT_MAX_MS: u32 = 120_000;
+pub const DEFAULT_STARTUP_TIMEOUT_MS: u32 = 15_000;
 pub const MIN_CENTER_SCALE: f64 = 0.1;
 pub const MAX_CENTER_SCALE: f64 = 1.0;
 
@@ -99,6 +100,12 @@ pub enum LayoutAction {
         id: LayoutActionId,
         window_matcher: WindowMatcher,
         placement: WindowPlacement,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        executable_path: Option<String>,
+        #[serde(default = "default_reopen_if_absent")]
+        reopen_if_absent: bool,
+        #[serde(default = "default_startup_timeout_ms")]
+        startup_timeout_ms: u32,
     },
     OpenBrowserWindow {
         id: LayoutActionId,
@@ -142,12 +149,25 @@ impl LayoutAction {
                 validate_startup_timeout(*startup_timeout_ms)?;
             }
             Self::PlaceExistingWindow {
+                executable_path,
+                reopen_if_absent,
+                startup_timeout_ms,
                 window_matcher,
                 placement,
                 ..
             } => {
+                if *reopen_if_absent {
+                    let path = executable_path.as_deref().ok_or_else(|| {
+                        AppError::Validation(
+                            "Choisissez une fenêtre pour enregistrer l’application à relancer."
+                                .to_owned(),
+                        )
+                    })?;
+                    validate_executable_path(path)?;
+                }
                 window_matcher.validate()?;
                 placement.validate()?;
+                validate_startup_timeout(*startup_timeout_ms)?;
             }
             Self::OpenBrowserWindow {
                 urls,
@@ -325,11 +345,21 @@ fn validate_startup_timeout(timeout_ms: u32) -> Result<(), AppError> {
     Ok(())
 }
 
+#[must_use]
+pub const fn default_reopen_if_absent() -> bool {
+    true
+}
+
+#[must_use]
+pub const fn default_startup_timeout_ms() -> u32 {
+    DEFAULT_STARTUP_TIMEOUT_MS
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         BrowserKind, Layout, LayoutAction, LayoutActionId, LayoutId, LayoutOptions,
-        WindowPlacement, validate_layout_name, validate_url,
+        WindowPlacement, validate_layout_name, validate_url, DEFAULT_STARTUP_TIMEOUT_MS,
     };
     use crate::domain::{
         geometry::NormalizedBounds,
@@ -361,6 +391,9 @@ mod tests {
                     ..Default::default()
                 },
                 placement: sample_placement(),
+                executable_path: Some("C:\\Windows\\System32\\notepad.exe".to_owned()),
+                reopen_if_absent: true,
+                startup_timeout_ms: DEFAULT_STARTUP_TIMEOUT_MS,
             }],
             options: LayoutOptions::default(),
             created_at: 1,
