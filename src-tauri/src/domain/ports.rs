@@ -6,7 +6,6 @@ use super::{
     monitor::Monitor,
     window::{DesktopWindow, NativeWindowHandle, WindowState},
 };
-use crate::error::AppError;
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum NativeError {
@@ -38,6 +37,42 @@ pub trait WindowController: Send + Sync {
         handle: NativeWindowHandle,
         state: WindowState,
     ) -> Result<(), NativeError>;
+}
+
+use crate::error::AppError;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProcessLaunchRequest {
+    pub executable_path: String,
+    pub arguments: Vec<String>,
+    pub working_directory: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LaunchedProcess {
+    pub process_id: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+pub enum ProcessLaunchError {
+    #[error("executable not found")]
+    ExecutableNotFound,
+    #[error("launch failed: {0}")]
+    LaunchFailed(String),
+}
+
+pub trait ProcessLauncher: Send + Sync {
+    fn launch(&self, request: ProcessLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError>;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserLaunchRequest {
+    pub executable_path: String,
+    pub arguments: Vec<String>,
+}
+
+pub trait BrowserLauncher: Send + Sync {
+    fn launch(&self, request: BrowserLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError>;
 }
 
 pub trait LayoutRepository: Send + Sync {
