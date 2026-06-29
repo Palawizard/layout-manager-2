@@ -18,6 +18,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Enforce LF line endings
+        shell: pwsh
+        run: |
+          git config --global core.autocrlf false
+          git checkout -- .
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
