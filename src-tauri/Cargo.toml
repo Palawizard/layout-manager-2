@@ -1,0 +1,17 @@
+[package]
+name = "layout-manager-2"
+version = "0.1.0"
+description = "Windows workspace layout manager"
+authors = ["Layout Manager 2 contributors"]
+edition = "2024"
+
+[lib]
+name = "layout_manager_2_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.3", features = [] }
+

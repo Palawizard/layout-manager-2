@@ -1,0 +1,29 @@
+# Dependencies and builds
+node_modules/
+dist/
+target/
+coverage/
+playwright-report/
+test-results/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Runtime data
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# Local AI documentation must stay outside version control
+docs-ia/
+
