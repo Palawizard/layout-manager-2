@@ -199,6 +199,7 @@ mod tests {
                     bounds: crate::domain::geometry::NormalizedBounds::new(0.0, 0.0, 1.0, 1.0)
                         .expect("bounds"),
                     state: crate::domain::window::WindowState::Normal,
+                    center_scale: None,
                 },
             }],
             options: LayoutOptions::default(),

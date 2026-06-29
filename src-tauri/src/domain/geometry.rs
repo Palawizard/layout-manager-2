@@ -36,11 +36,25 @@ impl NormalizedBounds {
 
     #[must_use]
     pub fn to_pixels(self, work_area: WorkArea) -> PixelBounds {
+        let left_edge =
+            work_area.x as f64 + self.x * f64::from(work_area.width);
+        let top_edge =
+            work_area.y as f64 + self.y * f64::from(work_area.height);
+        let right_edge = work_area.x as f64
+            + (self.x + self.width) * f64::from(work_area.width);
+        let bottom_edge = work_area.y as f64
+            + (self.y + self.height) * f64::from(work_area.height);
+
+        let left = left_edge.round() as i32;
+        let top = top_edge.round() as i32;
+        let right = right_edge.round() as i32;
+        let bottom = bottom_edge.round() as i32;
+
         PixelBounds {
-            x: work_area.x + (self.x * f64::from(work_area.width)).round() as i32,
-            y: work_area.y + (self.y * f64::from(work_area.height)).round() as i32,
-            width: (self.width * f64::from(work_area.width)).round().max(1.0) as i32,
-            height: (self.height * f64::from(work_area.height)).round().max(1.0) as i32,
+            x: left,
+            y: top,
+            width: (right - left).max(1),
+            height: (bottom - top).max(1),
         }
         .clamp_to(work_area)
     }
@@ -100,6 +114,27 @@ mod tests {
                 width: 960,
                 height: 1040
             }
+        );
+    }
+
+    #[test]
+    fn tiles_adjacent_halves_without_gaps_on_odd_widths() {
+        let area = WorkArea {
+            x: 0,
+            y: 0,
+            width: 1921,
+            height: 1080,
+        };
+        let left = NormalizedBounds::new(0.0, 0.0, 0.5, 1.0).expect("left");
+        let right = NormalizedBounds::new(0.5, 0.0, 0.5, 1.0).expect("right");
+        let left_pixels = left.to_pixels(area);
+        let right_pixels = right.to_pixels(area);
+
+        assert_eq!(left_pixels.x, 0);
+        assert_eq!(right_pixels.x, left_pixels.x + left_pixels.width);
+        assert_eq!(
+            right_pixels.x + right_pixels.width,
+            area.x + area.width
         );
     }
 

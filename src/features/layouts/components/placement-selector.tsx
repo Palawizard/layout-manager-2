@@ -6,9 +6,11 @@ import { listMonitors } from "../../../lib/tauri/monitors";
 import type { WindowState } from "../../../lib/tauri/windows";
 import type { WindowPlacement, PlacementPreset } from "../types/layout";
 import {
+  MIN_CENTER_SCALE,
+  applyCenterScale,
+  applyPlacementPreset,
   detectPreset,
   placementPresetLabels,
-  presetToBounds,
   standardPlacementPresets,
 } from "../lib/placement-presets";
 
@@ -25,7 +27,8 @@ const windowStateLabels: Record<WindowState, string> = {
 
 export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
-  const preset = useMemo(() => detectPreset(value.bounds), [value.bounds]);
+  const preset = useMemo(() => detectPreset(value), [value]);
+  const centerScalePercent = Math.round((value.centerScale ?? MIN_CENTER_SCALE) * 100);
 
   const preferredMonitorId = value.monitorSelector.preferredId;
 
@@ -59,6 +62,10 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
 
   function updatePlacement(patch: Partial<WindowPlacement>) {
     onChange({ ...value, ...patch });
+  }
+
+  function selectPreset(item: PlacementPreset) {
+    onChange(applyPlacementPreset(value, item));
   }
 
   return (
@@ -96,7 +103,7 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
                 preset === item ? "border-primary bg-muted" : "border-border"
               }`}
               key={item}
-              onClick={() => updatePlacement({ bounds: presetToBounds(item) })}
+              onClick={() => selectPreset(item)}
               type="button"
             >
               {placementPresetLabels[item]}
@@ -104,6 +111,27 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
           ))}
         </div>
       </div>
+
+      {preset === "center" && (
+        <div>
+          <Label htmlFor="center-scale">Taille de la zone ({centerScalePercent} %)</Label>
+          <input
+            className="mt-2 w-full accent-primary"
+            id="center-scale"
+            max={100}
+            min={MIN_CENTER_SCALE * 100}
+            onChange={(event) =>
+              onChange(applyCenterScale(value, Number(event.target.value) / 100))
+            }
+            step={1}
+            type="range"
+            value={centerScalePercent}
+          />
+          <p className="mt-2 text-xs text-muted-foreground">
+            Fenêtre centrée en taille normale, de 10 % à 100 % de l’écran.
+          </p>
+        </div>
+      )}
 
       <div className="rounded-md border border-border p-4">
         <p className="mb-3 text-sm font-medium">Aperçu</p>
@@ -126,6 +154,7 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
                       ...value.bounds,
                       [field]: Number(event.target.value),
                     },
+                    centerScale: null,
                   })
                 }
                 step={0.01}
@@ -139,18 +168,24 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
 
       <div>
         <Label htmlFor="placement-state">État final</Label>
-        <select
-          className="mt-2 h-10 w-full rounded-md border border-border bg-surface px-3 text-sm"
-          id="placement-state"
-          onChange={(event) => updatePlacement({ state: event.target.value as WindowState })}
-          value={value.state}
-        >
-          {(Object.keys(windowStateLabels) as WindowState[]).map((state) => (
-            <option key={state} value={state}>
-              {windowStateLabels[state]}
-            </option>
-          ))}
-        </select>
+        {preset === "fullScreen" ? (
+          <p className="mt-2 text-sm text-muted-foreground" id="placement-state">
+            Plein écran impose l’état « Agrandi ».
+          </p>
+        ) : (
+          <select
+            className="mt-2 h-10 w-full rounded-md border border-border bg-surface px-3 text-sm"
+            id="placement-state"
+            onChange={(event) => updatePlacement({ state: event.target.value as WindowState })}
+            value={value.state}
+          >
+            {(Object.keys(windowStateLabels) as WindowState[]).map((state) => (
+              <option key={state} value={state}>
+                {windowStateLabels[state]}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );

@@ -215,6 +215,7 @@ mod tests {
             },
             bounds: NormalizedBounds::new(0.0, 0.0, 0.5, 1.0).expect("bounds"),
             state: crate::domain::window::WindowState::Normal,
+            center_scale: None,
         }
     }
 

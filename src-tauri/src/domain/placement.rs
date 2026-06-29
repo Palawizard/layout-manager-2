@@ -86,6 +86,7 @@ pub fn build_window_placement(
         },
         bounds,
         state,
+        center_scale: None,
     })
 }
 

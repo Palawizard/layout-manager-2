@@ -5,6 +5,7 @@ export type BrowserKind = "edge" | "chrome" | "firefox" | "system_default";
 
 export type PlacementPreset =
   | "fullScreen"
+  | "center"
   | "leftHalf"
   | "rightHalf"
   | "topHalf"
@@ -31,6 +32,7 @@ export interface WindowPlacement {
   monitorSelector: MonitorSelector;
   bounds: NormalizedBounds;
   state: WindowState;
+  centerScale?: number | null;
 }
 
 export interface LayoutOptions {

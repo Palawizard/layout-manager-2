@@ -22,6 +22,7 @@ const windowPlacementSchema = z.object({
   }),
   bounds: normalizedBoundsSchema,
   state: z.enum(["normal", "maximized", "minimized"]),
+  centerScale: z.number().min(0.1).max(1).nullable().optional(),
 });
 
 const layoutActionSchema = z.discriminatedUnion("kind", [

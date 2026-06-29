@@ -11,6 +11,8 @@ pub const LAYOUT_NAME_MAX_LEN: usize = 80;
 pub const LAYOUT_DESCRIPTION_MAX_LEN: usize = 300;
 pub const STARTUP_TIMEOUT_MIN_MS: u32 = 1_000;
 pub const STARTUP_TIMEOUT_MAX_MS: u32 = 120_000;
+pub const MIN_CENTER_SCALE: f64 = 0.1;
+pub const MAX_CENTER_SCALE: f64 = 1.0;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -35,6 +37,8 @@ pub struct WindowPlacement {
     pub monitor_selector: MonitorSelector,
     pub bounds: NormalizedBounds,
     pub state: WindowState,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub center_scale: Option<f64>,
 }
 
 impl WindowPlacement {
@@ -45,6 +49,13 @@ impl WindowPlacement {
             self.bounds.width,
             self.bounds.height,
         )?;
+        if let Some(scale) = self.center_scale {
+            if !scale.is_finite() || !(MIN_CENTER_SCALE..=MAX_CENTER_SCALE).contains(&scale) {
+                return Err(AppError::Validation(
+                    "La taille de la zone centrale est invalide.".to_owned(),
+                ));
+            }
+        }
         Ok(())
     }
 }
@@ -334,6 +345,7 @@ mod tests {
             },
             bounds: NormalizedBounds::new(0.0, 0.0, 1.0, 1.0).expect("valid bounds"),
             state: crate::domain::window::WindowState::Normal,
+            center_scale: None,
         }
     }
 

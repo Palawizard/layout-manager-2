@@ -377,6 +377,7 @@ mod tests {
             },
             bounds: NormalizedBounds::new(0.0, 0.0, 1.0, 1.0).expect("bounds"),
             state: WindowState::Normal,
+            center_scale: None,
         }
     }
 
