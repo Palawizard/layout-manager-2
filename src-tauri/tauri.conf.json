@@ -25,7 +25,26 @@
   },
   "bundle": {
     "active": true,
-    "icon": [],
-    "targets": "all"
+    "category": "Productivity",
+    "copyright": "Layout Manager 2 contributors",
+    "shortDescription": "Organisez et appliquez vos espaces de travail Windows.",
+    "longDescription": "Layout Manager 2 enregistre des layouts, lance vos applications et place leurs fenêtres sur les bons écrans.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "targets": ["nsis"],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false
+      }
+    }
   }
 }
