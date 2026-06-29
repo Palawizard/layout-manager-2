@@ -29,6 +29,10 @@ vi.mock("@tauri-apps/api/core", () => ({
         });
       case "list_layouts":
         return Promise.resolve([]);
+      case "run_layout":
+        return Promise.resolve("run-1");
+      case "cancel_layout_run":
+        return Promise.resolve(null);
       case "get_settings":
         return Promise.resolve({
           preferredBrowser: "edge",
@@ -39,4 +43,8 @@ vi.mock("@tauri-apps/api/core", () => ({
         return Promise.resolve(null);
     }
   }),
+}));
+
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: vi.fn(() => Promise.resolve(() => undefined)),
 }));
