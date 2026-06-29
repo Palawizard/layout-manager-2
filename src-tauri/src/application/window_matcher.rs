@@ -147,12 +147,19 @@ fn score_window<'a>(
     if is_non_client_window(window) && matcher.title_pattern.is_none() {
         return None;
     }
+    let in_launched_tree = context.launched_process_id.is_some_and(|launched_id| {
+        window.process_id == launched_id
+            || context
+                .process_hierarchy
+                .is_some_and(|hierarchy| hierarchy.is_process_in_tree(window.process_id, launched_id))
+    });
     if matcher.process_name.as_ref().is_some_and(|expected| {
         window
             .process_name
             .as_ref()
             .is_some_and(|actual| !process_name_eq(expected, actual))
-    }) || title_regex.is_some_and(|regex| !regex.is_match(&window.title))
+    }) && !in_launched_tree
+        || title_regex.is_some_and(|regex| !regex.is_match(&window.title))
     {
         return None;
     }
@@ -424,6 +431,43 @@ mod tests {
                 .expect("main window")
                 .title,
             "Friends - Discord"
+        );
+    }
+
+    #[test]
+    fn matches_windows_spawned_from_a_child_process_after_launch() {
+        let javaw = DesktopWindow {
+            handle: NativeWindowHandle(1),
+            process_id: 100,
+            executable_path: Some("C:\\Apps\\Caffeinated\\jre\\bin\\javaw.exe".to_owned()),
+            process_name: Some("javaw.exe".to_owned()),
+            title: "Caffeinated".to_owned(),
+            class_name: "SunAwtFrame".to_owned(),
+            bounds: PixelBounds {
+                x: 0,
+                y: 0,
+                width: 1280,
+                height: 800,
+            },
+            state: WindowState::Normal,
+            monitor_id: None,
+        };
+        let matcher = WindowMatcher {
+            process_name: Some("Casterlabs-Caffeinated.exe".to_owned()),
+            class_name: Some("SunAwtFrame".to_owned()),
+            ..Default::default()
+        };
+        let context = MatchContext {
+            launched_process_id: Some(100),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            select_window(&matcher, &[javaw], &context)
+                .expect("child process window")
+                .process_name
+                .as_deref(),
+            Some("javaw.exe")
         );
     }
 
