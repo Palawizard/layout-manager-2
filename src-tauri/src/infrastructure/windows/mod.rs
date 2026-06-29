@@ -8,6 +8,8 @@ mod controller;
 #[path = "windows.rs"]
 mod inventory;
 mod monitors;
+#[cfg(test)]
+mod native_tests;
 mod process;
 
 #[derive(Debug, Default)]
