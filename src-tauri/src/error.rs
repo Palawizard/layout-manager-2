@@ -44,3 +44,34 @@ impl From<AppError> for PublicError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::{AppError, PublicError};
+
+    #[test]
+    fn serializes_public_errors_for_the_frontend() {
+        let error = PublicError::from(AppError::Internal);
+
+        assert_eq!(
+            serde_json::to_value(error).expect("public error should serialize"),
+            json!({
+                "code": "internal_error",
+                "message": "Une erreur est survenue.",
+                "field": null,
+                "retryable": true
+            })
+        );
+    }
+
+    #[test]
+    fn keeps_validation_messages_actionable() {
+        let error = PublicError::from(AppError::Validation("Le nom est requis.".to_owned()));
+
+        assert_eq!(error.code, "validation_failed");
+        assert_eq!(error.message, "Le nom est requis.");
+        assert!(!error.retryable);
+    }
+}

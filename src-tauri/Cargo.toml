@@ -24,3 +24,6 @@ unsafe_code = "warn"
 
 [lints.clippy]
 all = "warn"
+
+[dev-dependencies]
+serde_json = "1.0.150"

@@ -16,3 +16,17 @@ pub fn get_app_info() -> AppInfo {
         platform: "windows",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::get_app_info;
+
+    #[test]
+    fn returns_application_identity() {
+        let info = get_app_info();
+
+        assert_eq!(info.name, "Layout Manager 2");
+        assert_eq!(info.version, env!("CARGO_PKG_VERSION"));
+        assert_eq!(info.platform, "windows");
+    }
+}
