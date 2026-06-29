@@ -1,6 +1,8 @@
 use serde::Serialize;
 use thiserror::Error;
 
+use crate::domain::ports::NativeError;
+
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("invalid input: {0}")]
@@ -41,6 +43,32 @@ impl From<AppError> for PublicError {
                 field: None,
                 retryable: true,
             },
+        }
+    }
+}
+
+impl From<NativeError> for PublicError {
+    fn from(error: NativeError) -> Self {
+        let (code, message, retryable) = match error {
+            NativeError::AccessDenied => (
+                "access_denied",
+                "Cette fenêtre n’est pas accessible.".to_owned(),
+                false,
+            ),
+            NativeError::InvalidHandle => {
+                ("window_not_found", "Fenêtre introuvable.".to_owned(), true)
+            }
+            NativeError::OperationFailed(_) => (
+                "native_operation_failed",
+                "L’opération Windows n’a pas abouti.".to_owned(),
+                true,
+            ),
+        };
+        Self {
+            code,
+            message,
+            field: None,
+            retryable,
         }
     }
 }
