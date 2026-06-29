@@ -1,3 +1,4 @@
+mod launch_environment;
 mod launch_executable;
 mod spawn_detached;
 mod windows_process_launcher;

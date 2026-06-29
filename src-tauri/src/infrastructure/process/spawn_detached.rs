@@ -1,71 +1,143 @@
-use std::process::{Command, Stdio};
+use std::ffi::OsStr;
+use std::mem::size_of;
+use std::os::windows::ffi::OsStrExt;
+use std::ptr::null_mut;
 
 use crate::domain::ports::{LaunchedProcess, ProcessLaunchError, ProcessLaunchRequest};
 
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
+use super::launch_environment::prepare_launch_environment;
+use super::launch_executable::launch_working_directory;
 
 #[cfg(target_os = "windows")]
-const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+use windows::Win32::Foundation::{CloseHandle, HANDLE};
 #[cfg(target_os = "windows")]
-const CREATE_BREAKAWAY_FROM_JOB: u32 = 0x0100_0000;
+use windows::Win32::System::Threading::{
+    CreateProcessW, GetProcessId, PROCESS_CREATION_FLAGS, PROCESS_INFORMATION, STARTUPINFOW,
+    CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_PROCESS_GROUP, CREATE_NO_WINDOW, CREATE_UNICODE_ENVIRONMENT,
+    DETACHED_PROCESS, STARTF_USESTDHANDLES,
+};
 #[cfg(target_os = "windows")]
-const DETACHED_PROCESS: u32 = 0x0000_0008;
+use windows::core::PWSTR;
+
+#[cfg(target_os = "windows")]
+const DETACHED_CREATION_FLAGS: PROCESS_CREATION_FLAGS = PROCESS_CREATION_FLAGS(
+    CREATE_UNICODE_ENVIRONMENT.0
+        | CREATE_NEW_PROCESS_GROUP.0
+        | DETACHED_PROCESS.0
+        | CREATE_NO_WINDOW.0,
+);
 
 pub fn spawn_detached(request: ProcessLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError> {
+    let request = normalize_launch_request(request);
     if !std::path::Path::new(&request.executable_path).is_file() {
         return Err(ProcessLaunchError::ExecutableNotFound);
     }
 
-    match spawn_command(&request, true) {
-        Ok(process_id) => Ok(LaunchedProcess { process_id }),
-        Err(ProcessLaunchError::LaunchFailed(_)) => match spawn_command(&request, false) {
-            Ok(process_id) => Ok(LaunchedProcess { process_id }),
-            Err(ProcessLaunchError::LaunchFailed(_)) => spawn_via_shell_execute(request),
-            Err(error) => Err(error),
-        },
-        Err(error) => Err(error),
-    }
-}
-
-fn spawn_command(
-    request: &ProcessLaunchRequest,
-    breakaway_from_job: bool,
-) -> Result<u32, ProcessLaunchError> {
-    let mut command = Command::new(&request.executable_path);
-    command.args(&request.arguments);
-    if let Some(directory) = &request.working_directory {
-        command.current_dir(directory);
-    }
-    configure_detached(&mut command, breakaway_from_job);
-
-    let child = command.spawn().map_err(map_spawn_error)?;
-    let process_id = child.id();
-    drop(child);
-    Ok(process_id)
-}
-
-fn configure_detached(command: &mut Command, breakaway_from_job: bool) {
-    command
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-
     #[cfg(target_os = "windows")]
     {
-        let mut flags = CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS;
-        if breakaway_from_job {
-            flags |= CREATE_BREAKAWAY_FROM_JOB;
+        match spawn_create_process(&request, true) {
+            Ok(process_id) => return Ok(LaunchedProcess { process_id }),
+            Err(ProcessLaunchError::LaunchFailed(_)) => {}
+            Err(error) => return Err(error),
         }
-        command.creation_flags(flags);
+        match spawn_create_process(&request, false) {
+            Ok(process_id) => return Ok(LaunchedProcess { process_id }),
+            Err(ProcessLaunchError::LaunchFailed(_)) => {}
+            Err(error) => return Err(error),
+        }
+        if let Ok(process_id) = spawn_via_shell_execute(&request) {
+            return Ok(LaunchedProcess { process_id });
+        }
     }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = request;
+    }
+
+    Err(ProcessLaunchError::LaunchFailed(
+        "process launch failed".to_owned(),
+    ))
+}
+
+fn normalize_launch_request(mut request: ProcessLaunchRequest) -> ProcessLaunchRequest {
+    if request.working_directory.is_none() {
+        request.working_directory = launch_working_directory(&request.executable_path);
+    }
+    prepare_launch_environment(&mut request);
+    request
 }
 
 #[cfg(target_os = "windows")]
-fn spawn_via_shell_execute(request: ProcessLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError> {
+fn spawn_create_process(
+    request: &ProcessLaunchRequest,
+    breakaway_from_job: bool,
+) -> Result<u32, ProcessLaunchError> {
+    let mut application = wide_null_terminated(&request.executable_path);
+    let mut command_line = wide_null_terminated(&build_command_line(
+        &request.executable_path,
+        &request.arguments,
+    ));
+    let mut current_directory = request
+        .working_directory
+        .as_deref()
+        .map(wide_null_terminated);
+
+    let startup_info = STARTUPINFOW {
+        cb: size_of::<STARTUPINFOW>() as u32,
+        dwFlags: STARTF_USESTDHANDLES,
+        hStdInput: HANDLE(null_mut()),
+        hStdOutput: HANDLE(null_mut()),
+        hStdError: HANDLE(null_mut()),
+        ..Default::default()
+    };
+    let mut process_info = PROCESS_INFORMATION::default();
+    let mut flags = DETACHED_CREATION_FLAGS;
+    if breakaway_from_job {
+        flags = PROCESS_CREATION_FLAGS(flags.0 | CREATE_BREAKAWAY_FROM_JOB.0);
+    }
+
+    // SAFETY: Wide buffers and PROCESS_INFORMATION remain valid for the duration of the call.
+    // Returned process and thread handles are closed exactly once below.
+    let succeeded = unsafe {
+        CreateProcessW(
+            PWSTR(application.as_mut_ptr()),
+            Some(PWSTR(command_line.as_mut_ptr())),
+            None,
+            None,
+            false,
+            flags,
+            None,
+            current_directory
+                .as_mut()
+                .map_or(PWSTR::null(), |value| PWSTR(value.as_mut_ptr())),
+            &startup_info,
+            &mut process_info,
+        )
+    }
+    .is_ok();
+
+    if !succeeded {
+        return Err(ProcessLaunchError::LaunchFailed(
+            "create process failed".to_owned(),
+        ));
+    }
+
+    // SAFETY: Handles were returned by CreateProcessW and are closed exactly once here.
+    let process_id = unsafe { GetProcessId(process_info.hProcess) };
+    let _ = unsafe { CloseHandle(process_info.hThread) };
+    let _ = unsafe { CloseHandle(process_info.hProcess) };
+    if process_id == 0 {
+        return Err(ProcessLaunchError::LaunchFailed(
+            "create process returned no process id".to_owned(),
+        ));
+    }
+    Ok(process_id)
+}
+
+#[cfg(target_os = "windows")]
+fn spawn_via_shell_execute(request: &ProcessLaunchRequest) -> Result<u32, ProcessLaunchError> {
     use windows::{
-        Win32::Foundation::CloseHandle,
-        Win32::System::Threading::GetProcessId,
         Win32::UI::Shell::{SEE_MASK_FLAG_NO_UI, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW, ShellExecuteExW},
         Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL,
         core::PCWSTR,
@@ -97,7 +169,6 @@ fn spawn_via_shell_execute(request: ProcessLaunchRequest) -> Result<LaunchedProc
     };
 
     // SAFETY: All wide string buffers and the execute info struct remain valid for the call.
-    // Returned process handles are closed exactly once below.
     let succeeded = unsafe { ShellExecuteExW(&mut info) }.is_ok();
     if !succeeded {
         return Err(ProcessLaunchError::LaunchFailed(
@@ -120,60 +191,48 @@ fn spawn_via_shell_execute(request: ProcessLaunchRequest) -> Result<LaunchedProc
             "shell execute process id unavailable".to_owned(),
         ));
     }
-    let _ = process_access_check(process_id);
-    Ok(LaunchedProcess { process_id })
+    Ok(process_id)
 }
 
 #[cfg(target_os = "windows")]
-fn process_access_check(process_id: u32) -> Result<(), ()> {
-    use windows::Win32::Foundation::CloseHandle;
-    use windows::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
-    // SAFETY: Read-only access with a valid process id.
-    let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id) }
-        .map_err(|_| ())?;
-    // SAFETY: `handle` was returned by OpenProcess and is closed exactly once here.
-    let _ = unsafe { CloseHandle(handle) };
-    Ok(())
+fn build_command_line(executable: &str, arguments: &[String]) -> String {
+    let mut command_line = quote_argument(executable);
+    for argument in arguments {
+        command_line.push(' ');
+        command_line.push_str(&quote_argument(argument));
+    }
+    command_line
 }
 
 #[cfg(target_os = "windows")]
-fn wide_null_terminated(value: &str) -> Vec<u16> {
-    OsStr::new(value).encode_wide().chain(Some(0)).collect()
+fn quote_argument(argument: &str) -> String {
+    if argument.is_empty() {
+        return "\"\"".to_owned();
+    }
+    if !argument.chars().any(char::is_whitespace) && !argument.contains('"') {
+        return argument.to_owned();
+    }
+    let mut quoted = String::from("\"");
+    for character in argument.chars() {
+        if character == '"' {
+            quoted.push('\\');
+        }
+        quoted.push(character);
+    }
+    quoted.push('"');
+    quoted
 }
 
 #[cfg(target_os = "windows")]
 fn quote_arguments(arguments: &[String]) -> String {
     arguments
         .iter()
-        .map(|argument| {
-            if argument.chars().any(char::is_whitespace) {
-                format!("\"{argument}\"")
-            } else {
-                argument.clone()
-            }
-        })
+        .map(|argument| quote_argument(argument))
         .collect::<Vec<_>>()
         .join(" ")
 }
 
-#[cfg(not(target_os = "windows"))]
-fn spawn_via_shell_execute(_request: ProcessLaunchRequest) -> Result<LaunchedProcess, ProcessLaunchError> {
-    Err(ProcessLaunchError::LaunchFailed(
-        "shell execute is only available on Windows".to_owned(),
-    ))
+#[cfg(target_os = "windows")]
+fn wide_null_terminated(value: &str) -> Vec<u16> {
+    OsStr::new(value).encode_wide().chain(Some(0)).collect()
 }
-
-fn map_spawn_error(error: std::io::Error) -> ProcessLaunchError {
-    if error.kind() == std::io::ErrorKind::NotFound {
-        ProcessLaunchError::ExecutableNotFound
-    } else {
-        ProcessLaunchError::LaunchFailed(error.to_string())
-    }
-}
-
-#[cfg(target_os = "windows")]
-use std::ffi::OsStr;
-#[cfg(target_os = "windows")]
-use std::mem::size_of;
-#[cfg(target_os = "windows")]
-use std::os::windows::ffi::OsStrExt;
