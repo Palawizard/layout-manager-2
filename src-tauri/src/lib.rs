@@ -22,7 +22,13 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::app_info::get_app_info,
             commands::system::list_monitors,
-            commands::system::list_desktop_windows
+            commands::system::list_desktop_windows,
+            commands::layouts::list_layouts,
+            commands::layouts::get_layout,
+            commands::layouts::save_layout,
+            commands::layouts::duplicate_layout,
+            commands::layouts::delete_layout,
+            commands::layouts::validate_executable
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Layout Manager 2");
