@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::{
     application::{
-        execution_planner::build_execution_plan,
+        execution_planner::{ExecutionPlan, build_execution_plan},
         execution_service::{ExecutionService, RunProgressListener},
         layout_service::LayoutService,
         window_discovery_service::SharedCancellation,
@@ -38,6 +38,7 @@ pub struct ExecutionRuntime {
 #[derive(Debug, Default)]
 pub(crate) struct ExecutionRuntimeState {
     active: bool,
+    run_generation: u64,
     cancellation: Option<Arc<SharedCancellation>>,
 }
 
@@ -134,26 +135,30 @@ pub fn run_layout(
     layout_id: String,
     action_ids: Option<Vec<String>>,
 ) -> Result<RunId, PublicError> {
-    {
+    let run_generation = {
         let mut state = runtime.inner.lock().expect("execution runtime lock");
         if state.active {
             return Err(PublicError {
                 code: "run_already_active",
                 message: "Un layout est déjà en cours d’exécution.".to_owned(),
                 field: None,
-                retryable: false,
+                retryable: true,
             });
         }
+        state.run_generation += 1;
         state.active = true;
         state.cancellation = Some(Arc::new(SharedCancellation::new()));
-    }
+        state.run_generation
+    };
 
-    let layout = LayoutService::new(SqliteLayoutRepository::new(&database))
-        .get(&LayoutId(layout_id.clone()))
-        .map_err(PublicError::from)?;
-    let layout = filter_layout_actions(layout, action_ids)?;
-    let monitors = windows.list_monitors().map_err(PublicError::from)?;
-    let plan = build_execution_plan(&layout, &monitors).map_err(plan_error)?;
+    let plan = match prepare_execution_plan(&database, &windows, &layout_id, action_ids) {
+        Ok(plan) => plan,
+        Err(error) => {
+            tracing::warn!(?error, layout_id, "layout run preparation failed");
+            release_run_slot(&runtime, run_generation);
+            return Err(error);
+        }
+    };
 
     let cancellation = {
         let state = runtime.inner.lock().expect("execution runtime lock");
@@ -182,9 +187,7 @@ pub fn run_layout(
             &listener,
         );
         if let Some(runtime) = app.try_state::<ExecutionRuntime>() {
-            let mut state = runtime.inner.lock().expect("execution runtime lock");
-            state.active = false;
-            state.cancellation = None;
+            release_run_slot(&runtime, run_generation);
         }
     });
 
@@ -193,9 +196,11 @@ pub fn run_layout(
 
 #[tauri::command]
 pub fn cancel_layout_run(runtime: State<'_, ExecutionRuntime>) -> Result<(), PublicError> {
-    let state = runtime.inner.lock().expect("execution runtime lock");
+    let mut state = runtime.inner.lock().expect("execution runtime lock");
     if let Some(cancellation) = &state.cancellation {
         cancellation.cancel();
+        state.active = false;
+        state.cancellation = None;
         Ok(())
     } else {
         Err(PublicError {
@@ -204,6 +209,28 @@ pub fn cancel_layout_run(runtime: State<'_, ExecutionRuntime>) -> Result<(), Pub
             field: None,
             retryable: false,
         })
+    }
+}
+
+fn prepare_execution_plan(
+    database: &Database,
+    windows: &Win32WindowSystem,
+    layout_id: &str,
+    action_ids: Option<Vec<String>>,
+) -> Result<ExecutionPlan, PublicError> {
+    let layout = LayoutService::new(SqliteLayoutRepository::new(database))
+        .get(&LayoutId(layout_id.to_owned()))
+        .map_err(PublicError::from)?;
+    let layout = filter_layout_actions(layout, action_ids)?;
+    let monitors = windows.list_monitors().map_err(PublicError::from)?;
+    build_execution_plan(&layout, &monitors).map_err(plan_error)
+}
+
+fn release_run_slot(runtime: &ExecutionRuntime, run_generation: u64) {
+    let mut state = runtime.inner.lock().expect("execution runtime lock");
+    if state.run_generation == run_generation {
+        state.active = false;
+        state.cancellation = None;
     }
 }
 
@@ -230,7 +257,7 @@ fn filter_layout_actions(
 fn plan_error(error: crate::application::execution_planner::PlanError) -> PublicError {
     use crate::application::execution_planner::PlanError;
     let message = match error {
-        PlanError::Validation(_) => "Le layout contient des actions invalides.".to_owned(),
+        PlanError::Validation(message) => message,
         PlanError::NoMonitor => "Aucun écran n’est disponible.".to_owned(),
     };
     PublicError {

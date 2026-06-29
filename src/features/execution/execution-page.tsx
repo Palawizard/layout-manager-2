@@ -7,6 +7,7 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { Progress } from "../../components/ui/progress";
 import { cancelLayoutRun, runLayout } from "../../lib/tauri/execution";
+import { readPublicErrorMessage } from "../../lib/tauri/errors";
 import { subscribeToEvent } from "../../lib/tauri/events";
 import type {
   ActionCompletedEvent,
@@ -41,6 +42,7 @@ function ExecutionRunner({ layoutId, retryIds }: ExecutionRunnerProps) {
   const [results, setResults] = useState<ActionRunResult[]>([]);
   const [report, setReport] = useState<LayoutRunReport | null>(null);
   const [status, setStatus] = useState<"running" | "done" | "error">("running");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const progressValue = useMemo(() => {
     if (totalActions === 0) return 0;
@@ -97,12 +99,21 @@ function ExecutionRunner({ layoutId, retryIds }: ExecutionRunnerProps) {
       ]);
       unlisteners.push(...listeners);
 
+      if (disposed) {
+        return;
+      }
+
       try {
         await runLayout(layoutId, retryIds ?? undefined);
-      } catch {
+      } catch (error) {
         if (!disposed) {
+          const message = readPublicErrorMessage(
+            error,
+            "Impossible de lancer ce layout.",
+          );
+          setErrorMessage(message);
           setStatus("error");
-          toast.error("Impossible de lancer ce layout.");
+          toast.error(message);
         }
       }
     }
@@ -112,6 +123,7 @@ function ExecutionRunner({ layoutId, retryIds }: ExecutionRunnerProps) {
     return () => {
       disposed = true;
       for (const unlisten of unlisteners) unlisten();
+      void cancelLayoutRun().catch(() => undefined);
     };
   }, [layoutId, retryIds]);
 
@@ -136,7 +148,7 @@ function ExecutionRunner({ layoutId, retryIds }: ExecutionRunnerProps) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <p>Impossible de démarrer l’exécution.</p>
+          <p>{errorMessage ?? "Impossible de démarrer l’exécution."}</p>
           <Button className="mt-4" onClick={() => navigate("/layouts")} variant="secondary">
             Retour aux layouts
           </Button>

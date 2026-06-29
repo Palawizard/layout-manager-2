@@ -9,10 +9,10 @@ export function listInstalledBrowsers() {
 }
 
 export function runLayout(layoutId: string, actionIds?: string[]) {
-  return invokeCommand<string>("run_layout", {
-    layoutId,
-    actionIds: actionIds ?? null,
-  });
+  return invokeCommand<string>(
+    "run_layout",
+    actionIds ? { layoutId, actionIds } : { layoutId },
+  );
 }
 
 export function cancelLayoutRun() {
