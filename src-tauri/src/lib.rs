@@ -1,6 +1,6 @@
 mod application;
 mod commands;
-mod domain;
+pub mod domain;
 pub mod error;
 mod infrastructure;
 mod logging;
