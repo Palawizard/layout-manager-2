@@ -9,13 +9,12 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    logging::initialize();
-    tracing::info!(version = env!("CARGO_PKG_VERSION"), "application starting");
-
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            logging::initialize(app.handle()).expect("failed to initialize logging");
+            tracing::info!(version = env!("CARGO_PKG_VERSION"), "application starting");
             let database = infrastructure::persistence::Database::open(app.handle())?;
             app.manage(database);
             Ok(())
@@ -38,7 +37,8 @@ pub fn run() {
             commands::execution::cancel_layout_run,
             commands::settings::get_settings,
             commands::settings::save_settings,
-            commands::settings::open_data_directory
+            commands::settings::open_data_directory,
+            commands::settings::open_logs_directory
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Layout Manager 2");

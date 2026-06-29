@@ -40,3 +40,7 @@ export function saveSettings(settings: AppSettings) {
 export function openDataDirectory() {
   return invokeCommand<void>("open_data_directory");
 }
+
+export function openLogsDirectory() {
+  return invokeCommand<void>("open_logs_directory");
+}

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { getAppInfo, type AppInfo } from "../../lib/tauri/app-info";
-import { getSettings, openDataDirectory, saveSettings } from "../../lib/tauri/layouts";
+import { getSettings, openDataDirectory, openLogsDirectory, saveSettings } from "../../lib/tauri/layouts";
 import type { AppSettings, BrowserKind } from "../layouts/types/layout";
 import type { MonitorFallback } from "../../lib/tauri/monitors";
 
@@ -128,6 +128,21 @@ export function SettingsPage() {
                 </select>
               </div>
               <Button onClick={() => void handleSave()}>Enregistrer</Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <h2 className="font-medium">Diagnostic</h2>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Consultez les journaux locaux de l’application. Les informations sensibles y sont
+                limitées.
+              </p>
+              <Button onClick={() => void openLogsDirectory()} variant="secondary">
+                Ouvrir le dossier des journaux
+              </Button>
             </CardContent>
           </Card>
 

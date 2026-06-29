@@ -24,6 +24,20 @@ pub fn save_settings(
 }
 
 #[tauri::command]
+pub fn open_logs_directory(app: tauri::AppHandle) -> Result<(), PublicError> {
+    use tauri_plugin_opener::OpenerExt;
+
+    let directory = crate::logging::log_directory(&app).map_err(|error| {
+        AppError::Storage(error.to_string())
+    })?;
+    std::fs::create_dir_all(&directory).map_err(|error| AppError::Storage(error.to_string()))?;
+    app.opener()
+        .open_path(directory.to_string_lossy(), None::<&str>)
+        .map_err(|error| AppError::Storage(error.to_string()))?;
+    Ok(())
+}
+
+#[tauri::command]
 pub fn open_data_directory(
     app: tauri::AppHandle,
     database: State<'_, Database>,

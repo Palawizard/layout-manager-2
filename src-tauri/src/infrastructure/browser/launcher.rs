@@ -32,6 +32,15 @@ impl WindowsBrowserLauncher {
             build_browser_arguments(kind, urls, profile)
         };
 
+        tracing::debug!(
+            browser = ?kind,
+            url_count = urls.len(),
+            sample_url = %crate::logging::sanitize_for_log(
+                urls.first().map(String::as_str).unwrap_or("")
+            ),
+            "launching browser window"
+        );
+
         ProcessLauncher::launch(
             self,
             ProcessLaunchRequest {

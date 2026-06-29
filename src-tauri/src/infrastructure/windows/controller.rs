@@ -77,7 +77,7 @@ fn set_outer_bounds(window: HWND, bounds: PixelBounds) -> Result<(), NativeError
 }
 
 fn map_win32_error(error: windows::core::Error) -> NativeError {
-    const E_ACCESSDENIED: i32 = 0x8007_0005;
+    const E_ACCESSDENIED: i32 = 0x8007_0005u32 as i32;
     if error.code().0 == E_ACCESSDENIED {
         NativeError::AccessDenied
     } else {
