@@ -60,7 +60,7 @@ impl From<NativeError> for PublicError {
         let (code, message, retryable) = match error {
             NativeError::AccessDenied => (
                 "access_denied",
-                "Cette fenêtre n’est pas accessible.".to_owned(),
+                crate::domain::ports::ACCESS_DENIED_USER_MESSAGE.to_owned(),
                 false,
             ),
             NativeError::InvalidHandle => {
@@ -108,6 +108,16 @@ mod tests {
 
         assert_eq!(error.code, "validation_failed");
         assert_eq!(error.message, "Le nom est requis.");
+        assert!(!error.retryable);
+    }
+
+    #[test]
+    fn explains_elevated_application_access_denial() {
+        use crate::domain::ports::{ACCESS_DENIED_USER_MESSAGE, NativeError};
+
+        let error = PublicError::from(NativeError::AccessDenied);
+        assert_eq!(error.code, "access_denied");
+        assert_eq!(error.message, ACCESS_DENIED_USER_MESSAGE);
         assert!(!error.retryable);
     }
 }

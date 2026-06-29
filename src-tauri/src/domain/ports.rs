@@ -17,6 +17,10 @@ pub enum NativeError {
     OperationFailed(String),
 }
 
+/// French message shown when Windows blocks cross-integrity window control.
+pub const ACCESS_DENIED_USER_MESSAGE: &str =
+    "Cette application s’exécute avec des droits élevés. Layout Manager ne peut pas la contrôler.";
+
 pub trait MonitorProvider: Send + Sync {
     fn list_monitors(&self) -> Result<Vec<Monitor>, NativeError>;
 }

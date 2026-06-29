@@ -63,7 +63,7 @@ pub fn apply_planned_placement(
 
 fn native_error_message(error: NativeError) -> String {
     match error {
-        NativeError::AccessDenied => "Cette fenêtre n’est pas accessible.".to_owned(),
+        NativeError::AccessDenied => crate::domain::ports::ACCESS_DENIED_USER_MESSAGE.to_owned(),
         NativeError::InvalidHandle => "Fenêtre introuvable.".to_owned(),
         NativeError::OperationFailed(_) => "Placement impossible.".to_owned(),
     }

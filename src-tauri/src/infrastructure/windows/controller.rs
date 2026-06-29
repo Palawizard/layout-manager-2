@@ -73,7 +73,16 @@ fn set_outer_bounds(window: HWND, bounds: PixelBounds) -> Result<(), NativeError
             SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER,
         )
     }
-    .map_err(|error| NativeError::OperationFailed(error.to_string()))
+    .map_err(map_win32_error)
+}
+
+fn map_win32_error(error: windows::core::Error) -> NativeError {
+    const E_ACCESSDENIED: i32 = 0x8007_0005;
+    if error.code().0 == E_ACCESSDENIED {
+        NativeError::AccessDenied
+    } else {
+        NativeError::OperationFailed(error.to_string())
+    }
 }
 
 fn align_visible_bounds(window: HWND, target: PixelBounds) -> Result<(), NativeError> {
@@ -106,7 +115,7 @@ fn outer_bounds(window: HWND) -> Result<PixelBounds, NativeError> {
     let mut rect = RECT::default();
     // SAFETY: `rect` is writable and the HWND was validated by the caller.
     unsafe { GetWindowRect(window, &mut rect) }
-        .map_err(|error| NativeError::OperationFailed(error.to_string()))?;
+        .map_err(map_win32_error)?;
     Ok(rect_to_bounds(rect))
 }
 
