@@ -245,6 +245,7 @@ mod tests {
                         ..Default::default()
                     },
                     placement: sample_placement(),
+                    captured_placement: None,
                     executable_path: Some("C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe".to_owned()),
                     reopen_if_absent: true,
                     startup_timeout_ms: 15_000,

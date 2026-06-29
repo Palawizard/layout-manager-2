@@ -57,6 +57,41 @@ impl Drop for TestWindow {
 
 #[test]
 #[ignore = "inspects the interactive Windows desktop"]
+fn inspect_steam_windows() {
+    let system = Win32WindowSystem::new();
+    let windows = system
+        .list_windows_including_untitled()
+        .expect("windows should be enumerable");
+    let steam: Vec<_> = windows
+        .into_iter()
+        .filter(|window| {
+            window
+                .process_name
+                .as_deref()
+                .is_some_and(|name| name.eq_ignore_ascii_case("steam.exe")
+                    || name.eq_ignore_ascii_case("steamwebhelper.exe"))
+        })
+        .collect();
+    eprintln!("Steam-related windows visible to the app ({}):", steam.len());
+    for window in &steam {
+        eprintln!(
+            "  handle={} pid={} class={} title={:?} {}x{} @({},{}) state={:?}",
+            window.handle.0,
+            window.process_id,
+            window.class_name,
+            window.title,
+            window.bounds.width,
+            window.bounds.height,
+            window.bounds.x,
+            window.bounds.y,
+            window.state,
+        );
+    }
+    assert!(system.list_windows().is_ok());
+}
+
+#[test]
+#[ignore = "inspects the interactive Windows desktop"]
 fn enumerates_native_monitors_and_windows() {
     let system = Win32WindowSystem::new();
     let monitors = system

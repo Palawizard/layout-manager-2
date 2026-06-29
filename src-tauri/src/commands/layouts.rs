@@ -55,6 +55,11 @@ pub fn validate_executable(
         .map_err(PublicError::from)
 }
 
+#[tauri::command]
+pub fn resolve_launch_executable(path: String) -> String {
+    crate::infrastructure::process::resolve_launch_executable(&path)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -93,6 +98,7 @@ mod tests {
                     state: crate::domain::window::WindowState::Normal,
                     center_scale: None,
                 },
+                captured_placement: None,
                 executable_path: Some("C:\\Windows\\System32\\notepad.exe".to_owned()),
                 reopen_if_absent: true,
                 startup_timeout_ms: 15_000,

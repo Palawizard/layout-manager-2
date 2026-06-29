@@ -58,6 +58,7 @@ export type LayoutAction =
       id: string;
       windowMatcher: WindowMatcher;
       placement: WindowPlacement;
+      capturedPlacement: WindowPlacement;
       executablePath: string | null;
       reopenIfAbsent: boolean;
       startupTimeoutMs: number;

@@ -3,9 +3,12 @@ import { useState } from "react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
+import { listMonitors } from "../../../lib/tauri/monitors";
+import { resolveLaunchExecutable } from "../../../lib/tauri/layouts";
 import { WindowPicker } from "../../windows/window-picker";
 import type { LayoutAction } from "../types/layout";
 import { createDefaultPlacement } from "../lib/defaults";
+import { clonePlacement, placementFromWindow } from "../lib/placement-from-window";
 import { PlacementSelector } from "./placement-selector";
 
 interface ExistingWindowActionEditorProps {
@@ -30,7 +33,9 @@ export function ExistingWindowActionEditor({ action, onChange }: ExistingWindowA
           </Button>
         </div>
         {action.executablePath ? (
-          <p className="mt-2 truncate text-xs text-muted-foreground">{action.executablePath}</p>
+          <p className="mt-2 truncate text-xs text-muted-foreground">
+            Relance : {action.executablePath}
+          </p>
         ) : null}
       </div>
       <div>
@@ -91,18 +96,38 @@ export function ExistingWindowActionEditor({ action, onChange }: ExistingWindowA
         </div>
       </div>
       <PlacementSelector
+        capturedPlacement={action.capturedPlacement}
         onChange={(placement) => onChange({ ...action, placement })}
         value={action.placement ?? createDefaultPlacement()}
       />
       <WindowPicker
         onOpenChange={setPickerOpen}
         onSelect={(window, matcher) => {
-          onChange({
-            ...action,
-            windowMatcher: matcher,
-            executablePath: window.executablePath,
-          });
-          setPickerOpen(false);
+          void listMonitors()
+            .then(async (monitors) => {
+              const placement = placementFromWindow(window, monitors) ?? action.placement;
+              const capturedPlacement = clonePlacement(placement);
+              const executablePath = window.executablePath
+                ? await resolveLaunchExecutable(window.executablePath)
+                : null;
+              onChange({
+                ...action,
+                windowMatcher: matcher,
+                executablePath,
+                placement,
+                capturedPlacement,
+              });
+            })
+            .catch(() => {
+              onChange({
+                ...action,
+                windowMatcher: matcher,
+                executablePath: window.executablePath,
+              });
+            })
+            .finally(() => {
+              setPickerOpen(false);
+            });
         }}
         open={pickerOpen}
       />

@@ -39,4 +39,46 @@ describe("buildWindowMatcher", () => {
       instanceIndex: 0,
     });
   });
+
+  it("orders same-process windows deterministically for instance selection", () => {
+    const windows = [
+      { ...window(42, "", "VHConsole.exe"), bounds: { x: 0, y: 0, width: 1920, height: 1080 } },
+      { ...window(42, "VIVE Hub", "VHConsole.exe"), bounds: { x: 100, y: 100, width: 320, height: 240 } },
+    ];
+
+    expect(
+      computeInstanceIndex(windows[1], windows, {
+        processName: "VHConsole.exe",
+        className: "Chrome_WidgetWin_1",
+        titlePattern: null,
+      }),
+    ).toBe(1);
+  });
+
+  it("ignores auxiliary steam panels when computing the instance index", () => {
+    const windows = [
+      {
+        processId: 42,
+        executablePath: "C:\\Steam\\steamwebhelper.exe",
+        processName: "steamwebhelper.exe",
+        title: "Liste de contacts",
+        className: "SDL_app",
+        bounds: { x: 0, y: 0, width: 160, height: 28 },
+        state: "normal" as const,
+        monitorId: null,
+      },
+      {
+        processId: 42,
+        executablePath: "C:\\Steam\\steamwebhelper.exe",
+        processName: "steamwebhelper.exe",
+        title: "Steam",
+        className: "SDL_app",
+        bounds: { x: 0, y: 0, width: 1280, height: 696 },
+        state: "normal" as const,
+        monitorId: null,
+      },
+    ];
+
+    expect(buildWindowMatcher(windows[1], windows).instanceIndex).toBe(0);
+  });
 });

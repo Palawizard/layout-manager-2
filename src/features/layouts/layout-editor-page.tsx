@@ -15,6 +15,7 @@ import { getLayout, saveLayout } from "../../lib/tauri/layouts";
 import { ActionList } from "./components/action-list";
 import { LayoutDetailsForm } from "./components/layout-details-form";
 import { createDefaultPlacement } from "./lib/defaults";
+import { clonePlacement } from "./lib/placement-from-window";
 import { normalizeLayout } from "./lib/normalize-layout";
 import { layoutDraftSchema } from "./schemas/layout-schema";
 import { useEditorStore } from "./stores/editor-store";
@@ -58,6 +59,7 @@ function createAction(kind: LayoutAction["kind"]): LayoutAction {
           instanceIndex: null,
         },
         placement,
+        capturedPlacement: clonePlacement(placement),
         executablePath: null,
         reopenIfAbsent: true,
         startupTimeoutMs: 15_000,

@@ -1,41 +1,65 @@
+use std::mem::size_of;
+
 use windows::{
     Win32::{
         Foundation::{HWND, LPARAM, RECT},
         Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute},
         System::Threading::GetCurrentProcessId,
         UI::WindowsAndMessaging::{
-            EnumWindows, GW_OWNER, GetClassNameW, GetWindow, GetWindowRect, GetWindowTextLengthW,
-            GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, IsZoomed,
+            EnumWindows, GetClassNameW, GetWindowLongPtrW, GetWindowRect, GetWindowTextLengthW,
+            GetWindowTextW, GetWindowThreadProcessId, GWL_EXSTYLE, IsIconic, IsWindowVisible,
+            IsZoomed,
         },
     },
     core::BOOL,
 };
 
 use super::{Win32WindowSystem, monitors::monitor_id_from_window, process::process_metadata};
-use crate::domain::{
-    geometry::PixelBounds,
-    ports::{NativeError, WindowInventory},
-    window::{DesktopWindow, NativeWindowHandle, WindowState},
+use crate::{
+    application::{
+        ancillary_panel_title::has_ancillary_panel_title,
+        durable_window::is_auxiliary_window,
+    },
+    domain::{
+        geometry::PixelBounds,
+        ports::{NativeError, WindowInventory},
+        window::{DesktopWindow, NativeWindowHandle, WindowState},
+    },
 };
 
 impl WindowInventory for Win32WindowSystem {
     fn list_windows(&self) -> Result<Vec<DesktopWindow>, NativeError> {
-        let mut handles = Vec::<HWND>::new();
-        // SAFETY: The pointer in LPARAM refers to `handles` for the entire synchronous enumeration.
-        if unsafe {
-            EnumWindows(
-                Some(collect_window),
-                LPARAM((&raw mut handles).cast::<()>() as isize),
-            )
-        }
-        .is_err()
-        {
-            return Err(NativeError::OperationFailed(
-                "window enumeration".to_owned(),
-            ));
-        }
-        Ok(handles.into_iter().filter_map(inspect_window).collect())
+        list_windows_internal(false)
     }
+
+    fn list_windows_including_untitled(&self) -> Result<Vec<DesktopWindow>, NativeError> {
+        list_windows_internal(true)
+    }
+
+    fn is_process_in_tree(&self, process_id: u32, ancestor_id: u32) -> bool {
+        super::process_tree::is_process_in_tree(process_id, ancestor_id)
+    }
+}
+
+fn list_windows_internal(include_untitled: bool) -> Result<Vec<DesktopWindow>, NativeError> {
+    let mut handles = Vec::<HWND>::new();
+    // SAFETY: The pointer in LPARAM refers to `handles` for the entire synchronous enumeration.
+    if unsafe {
+        EnumWindows(
+            Some(collect_window),
+            LPARAM((&raw mut handles).cast::<()>() as isize),
+        )
+    }
+    .is_err()
+    {
+        return Err(NativeError::OperationFailed(
+            "window enumeration".to_owned(),
+        ));
+    }
+    Ok(handles
+        .into_iter()
+        .filter_map(|window| inspect_window(window, include_untitled))
+        .collect())
 }
 
 unsafe extern "system" fn collect_window(window: HWND, data: LPARAM) -> BOOL {
@@ -44,11 +68,9 @@ unsafe extern "system" fn collect_window(window: HWND, data: LPARAM) -> BOOL {
     BOOL(1)
 }
 
-fn inspect_window(window: HWND) -> Option<DesktopWindow> {
+fn inspect_window(window: HWND, include_untitled: bool) -> Option<DesktopWindow> {
     // SAFETY: The handle came from EnumWindows and each query is read-only.
-    if !unsafe { IsWindowVisible(window) }.as_bool()
-        || unsafe { GetWindow(window, GW_OWNER) }.ok().is_some()
-    {
+    if !is_enumerable_top_level_window(window) {
         return None;
     }
     let mut cloaked = 0u32;
@@ -74,14 +96,38 @@ fn inspect_window(window: HWND) -> Option<DesktopWindow> {
     }
     let title = window_text(window);
     let class_name = window_class(window);
-    if title.trim().is_empty()
-        || matches!(class_name.as_str(), "Shell_TrayWnd" | "Progman" | "WorkerW")
+    if !include_untitled
+        && (title.trim().is_empty()
+            || matches!(class_name.as_str(), "Shell_TrayWnd" | "Progman" | "WorkerW"))
     {
+        return None;
+    }
+    if include_untitled && matches!(class_name.as_str(), "Shell_TrayWnd" | "Progman" | "WorkerW") {
         return None;
     }
     let mut rect = RECT::default();
     // SAFETY: `rect` is writable and the handle came from EnumWindows.
     if unsafe { GetWindowRect(window, &raw mut rect) }.is_err() {
+        return None;
+    }
+    let bounds = PixelBounds {
+        x: rect.left,
+        y: rect.top,
+        width: rect.right - rect.left,
+        height: rect.bottom - rect.top,
+    };
+    if is_auxiliary_window(&DesktopWindow {
+        handle: NativeWindowHandle(window.0 as isize),
+        process_id,
+        executable_path: None,
+        process_name: None,
+        title: title.clone(),
+        class_name: class_name.clone(),
+        bounds,
+        state: WindowState::Normal,
+        monitor_id: None,
+    }) || has_ancillary_panel_title(&title)
+    {
         return None;
     }
     let state = if unsafe { IsIconic(window) }.as_bool() {
@@ -99,15 +145,23 @@ fn inspect_window(window: HWND) -> Option<DesktopWindow> {
         process_name,
         title,
         class_name,
-        bounds: PixelBounds {
-            x: rect.left,
-            y: rect.top,
-            width: rect.right - rect.left,
-            height: rect.bottom - rect.top,
-        },
+        bounds,
         state,
         monitor_id: monitor_id_from_window(window),
     })
+}
+
+const WS_EX_APPWINDOW: isize = 0x0008_0000;
+const WS_EX_TOOLWINDOW: isize = 0x0000_0080;
+
+fn is_enumerable_top_level_window(window: HWND) -> bool {
+    // SAFETY: The handle came from EnumWindows and each query is read-only.
+    if !unsafe { IsWindowVisible(window) }.as_bool() {
+        return false;
+    }
+    // SAFETY: The handle came from EnumWindows and GWL_EXSTYLE is a valid index here.
+    let extended_style = unsafe { GetWindowLongPtrW(window, GWL_EXSTYLE) };
+    !(extended_style & WS_EX_TOOLWINDOW != 0 && extended_style & WS_EX_APPWINDOW == 0)
 }
 
 fn window_text(window: HWND) -> String {
@@ -128,5 +182,3 @@ fn window_class(window: HWND) -> String {
     let copied = unsafe { GetClassNameW(window, &mut buffer) };
     String::from_utf16_lossy(&buffer[..copied.max(0) as usize])
 }
-
-use std::mem::size_of;

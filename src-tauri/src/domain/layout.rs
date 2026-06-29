@@ -101,6 +101,8 @@ pub enum LayoutAction {
         window_matcher: WindowMatcher,
         placement: WindowPlacement,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        captured_placement: Option<WindowPlacement>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         executable_path: Option<String>,
         #[serde(default = "default_reopen_if_absent")]
         reopen_if_absent: bool,
@@ -154,6 +156,7 @@ impl LayoutAction {
                 startup_timeout_ms,
                 window_matcher,
                 placement,
+                captured_placement,
                 ..
             } => {
                 if *reopen_if_absent {
@@ -167,6 +170,9 @@ impl LayoutAction {
                 }
                 window_matcher.validate()?;
                 placement.validate()?;
+                if let Some(captured) = captured_placement {
+                    captured.validate()?;
+                }
                 validate_startup_timeout(*startup_timeout_ms)?;
             }
             Self::OpenBrowserWindow {
@@ -391,6 +397,7 @@ mod tests {
                     ..Default::default()
                 },
                 placement: sample_placement(),
+                captured_placement: None,
                 executable_path: Some("C:\\Windows\\System32\\notepad.exe".to_owned()),
                 reopen_if_absent: true,
                 startup_timeout_ms: DEFAULT_STARTUP_TIMEOUT_MS,

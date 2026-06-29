@@ -25,6 +25,10 @@ export function validateExecutable(path: string) {
   return invokeCommand<string>("validate_executable", { path });
 }
 
+export function resolveLaunchExecutable(path: string) {
+  return invokeCommand<string>("resolve_launch_executable", { path });
+}
+
 export function getSettings() {
   return invokeCommand<AppSettings>("get_settings");
 }

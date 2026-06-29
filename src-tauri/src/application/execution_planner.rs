@@ -85,6 +85,15 @@ impl PlannedLaunch {
             | Self::Browser { placement, .. } => placement,
         }
     }
+
+    #[must_use]
+    pub fn window_matcher(&self) -> Option<&WindowMatcher> {
+        match self {
+            Self::Application { window_matcher, .. }
+            | Self::ExistingWindow { window_matcher, .. } => Some(window_matcher),
+            Self::Browser { .. } => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -343,6 +352,7 @@ mod tests {
                     ..Default::default()
                 },
                 placement: sample_placement(),
+                captured_placement: None,
                 executable_path: Some("C:\\Windows\\System32\\notepad.exe".to_owned()),
                 reopen_if_absent: true,
                 startup_timeout_ms: 15_000,

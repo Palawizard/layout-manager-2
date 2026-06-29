@@ -32,6 +32,7 @@ pub fn run() {
             commands::layouts::duplicate_layout,
             commands::layouts::delete_layout,
             commands::layouts::validate_executable,
+            commands::layouts::resolve_launch_executable,
             commands::execution::list_installed_browsers,
             commands::execution::run_layout,
             commands::execution::cancel_layout_run,

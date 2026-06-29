@@ -1,5 +1,32 @@
 import type { DesktopWindow, WindowMatcher } from "../../lib/tauri/windows";
 
+const MIN_CLIENT_WIDTH = 120;
+const MIN_CLIENT_HEIGHT = 80;
+
+const ANCILLARY_PANEL_KEYWORDS = [
+  "contact list",
+  "liste de contacts",
+  "liste des contacts",
+  "friends list",
+  "liste d'amis",
+  "liste des amis",
+  "chat list",
+  "liste de discussions",
+];
+
+function isAuxiliaryWindow(window: DesktopWindow): boolean {
+  return window.bounds.width < MIN_CLIENT_WIDTH || window.bounds.height < MIN_CLIENT_HEIGHT;
+}
+
+function hasAncillaryPanelTitle(title: string): boolean {
+  const normalized = title.trim().toLowerCase();
+  return ANCILLARY_PANEL_KEYWORDS.some((keyword) => normalized.includes(keyword));
+}
+
+function isNonClientWindow(window: DesktopWindow): boolean {
+  return isAuxiliaryWindow(window) || hasAncillaryPanelTitle(window.title);
+}
+
 function processNameStem(name: string): string {
   return name.replace(/\.exe$/i, "");
 }
@@ -55,8 +82,19 @@ export function computeInstanceIndex(
   criteria: Pick<WindowMatcher, "processName" | "className" | "titlePattern">,
 ): number | null {
   const ranked = allWindows
-    .filter((window) => matchesCriteria(window, criteria))
-    .sort((left, right) => left.processId - right.processId);
+    .filter(
+      (window) =>
+        matchesCriteria(window, criteria) && !isNonClientWindow(window),
+    )
+    .sort(
+      (left, right) =>
+        left.processId - right.processId ||
+        left.title.localeCompare(right.title) ||
+        left.bounds.x - right.bounds.x ||
+        left.bounds.y - right.bounds.y ||
+        left.bounds.width - right.bounds.width ||
+        left.bounds.height - right.bounds.height,
+    );
   const index = ranked.findIndex((window) => sameWindow(window, selected));
   return index >= 0 ? index : null;
 }
@@ -72,7 +110,7 @@ export function buildWindowMatcher(
   };
 
   return {
-    executablePath: null,
+    executablePath: window.executablePath,
     ...criteria,
     instanceIndex: computeInstanceIndex(window, allWindows, criteria),
   };

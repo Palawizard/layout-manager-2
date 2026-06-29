@@ -51,6 +51,7 @@ const layoutActionSchema = z.discriminatedUnion("kind", [
       { message: "Sélectionnez une fenêtre à retrouver." },
     ),
     placement: windowPlacementSchema,
+    capturedPlacement: windowPlacementSchema.optional(),
     executablePath: z.string().nullable(),
     reopenIfAbsent: z.boolean(),
     startupTimeoutMs: z.number().int().min(1000).max(120_000),

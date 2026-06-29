@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "../../../components/ui/button";
 import {
@@ -38,12 +38,6 @@ export function ActionList({
   onEditingIndexChange,
 }: ActionListProps) {
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
-  const closingAfterConfirmRef = useRef(false);
-
-  function confirmEdit() {
-    closingAfterConfirmRef.current = true;
-    onConfirmEdit();
-  }
 
   function moveAction(index: number, direction: -1 | 1) {
     const target = index + direction;
@@ -117,21 +111,12 @@ export function ActionList({
         ))}
       </ul>
 
-      <Dialog
-        onOpenChange={(open) => {
-          if (!open) {
-            if (closingAfterConfirmRef.current) {
-              closingAfterConfirmRef.current = false;
-              return;
-            }
-            if (editingIndex !== null) {
-              onCancelEdit();
-            }
-          }
-        }}
-        open={editingIndex !== null}
-      >
-        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+      <Dialog open={editingIndex !== null}>
+        <DialogContent
+          className="max-h-[85vh] max-w-2xl overflow-y-auto"
+          dismissOnEscape={false}
+          dismissOnOutsideClick={false}
+        >
           <DialogTitle>Modifier l’action</DialogTitle>
           <DialogDescription>Ajustez les paramètres de cette action.</DialogDescription>
           {editingIndex !== null && actions[editingIndex]?.kind === "launch_application" && (
@@ -156,7 +141,7 @@ export function ActionList({
             <Button onClick={onCancelEdit} variant="secondary">
               Annuler
             </Button>
-            <Button onClick={confirmEdit}>Enregistrer</Button>
+            <Button onClick={onConfirmEdit}>Enregistrer</Button>
           </div>
         </DialogContent>
       </Dialog>

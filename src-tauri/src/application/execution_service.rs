@@ -1,6 +1,7 @@
 use std::{
     collections::HashSet,
-    time::Instant,
+    thread,
+    time::{Duration, Instant},
 };
 
 use crate::{
@@ -9,7 +10,8 @@ use crate::{
         placement_executor::apply_planned_placement,
         unmatched_minimizer::minimize_unmatched_windows,
         window_discovery_service::{
-            CancellationCheck, WaitError, find_existing_window, snapshot_handles, wait_for_window,
+            CancellationCheck, WaitError, find_existing_window, refresh_matched_handle,
+            snapshot_handles, wait_for_window,
         },
         window_reuse::{browser_window_matcher, try_reuse_application_window},
     },
@@ -23,6 +25,10 @@ use crate::{
         window::{NativeWindowHandle},
     },
     infrastructure::browser::{WindowsBrowserLauncher, resolve_browser_executable},
+    infrastructure::process::{
+        is_windows_executable, launch_working_directory, recover_launch_executable,
+        resolve_launch_executable,
+    },
 };
 
 pub trait RunProgressListener: Send + Sync {
@@ -99,8 +105,20 @@ impl ExecutionService {
             };
 
             listener.on_action_started(step.action_id(), step.label(), "placement");
-            let mut placement_result =
-                apply_planned_placement(step, controller, resolved.handle, resolved.reused);
+            if resolved.relaunched {
+                thread::sleep(Duration::from_millis(250));
+            }
+            let placement_handle = step
+                .window_matcher()
+                .map(|matcher| refresh_matched_handle(inventory, matcher, resolved.handle))
+                .unwrap_or(resolved.handle);
+            let mut placement_result = apply_planned_placement(
+                step,
+                inventory,
+                controller,
+                placement_handle,
+                resolved.reused,
+            );
             if resolved.relaunched && placement_result.status == ActionRunStatus::Succeeded {
                 placement_result.message = Some("Application relancée.".to_owned());
             }
@@ -108,7 +126,7 @@ impl ExecutionService {
             let should_stop =
                 placement_result_needs_stop(&placement_result, plan.options.continue_on_error);
             if placement_result.status == ActionRunStatus::Succeeded {
-                matched_handles.insert(resolved.handle);
+                matched_handles.insert(placement_handle);
             }
             results.push(placement_result);
 
@@ -183,12 +201,25 @@ impl ExecutionService {
                             true,
                         ));
                     };
+                    let resolved_path = recover_launch_executable(
+                        path,
+                        window_matcher.process_name.as_deref(),
+                    );
+                    if !is_windows_executable(std::path::Path::new(&resolved_path)) {
+                        return Err(failed_result(
+                            action_id,
+                            label,
+                            "Impossible de relancer l’application : exécutable introuvable."
+                                .to_owned(),
+                            false,
+                        ));
+                    }
                     let previous_handles = snapshot_handles(inventory);
                     let launched = process_launcher
                         .launch(ProcessLaunchRequest {
-                            executable_path: path.clone(),
+                            executable_path: resolved_path.clone(),
                             arguments: Vec::new(),
-                            working_directory: None,
+                            working_directory: launch_working_directory(&resolved_path),
                         })
                         .map_err(|error| {
                             failed_result(action_id, label, launch_error_message(error), false)
@@ -198,6 +229,7 @@ impl ExecutionService {
                         window_matcher,
                         &previous_handles,
                         Some(launched.process_id),
+                        Some(&resolved_path),
                         *startup_timeout_ms,
                         cancellation,
                     )
@@ -242,12 +274,15 @@ impl ExecutionService {
                     });
                 }
 
+                let resolved_path = resolve_launch_executable(executable_path);
                 let previous_handles = snapshot_handles(inventory);
                 let launched = process_launcher
                     .launch(ProcessLaunchRequest {
-                        executable_path: executable_path.clone(),
+                        executable_path: resolved_path.clone(),
                         arguments: arguments.clone(),
-                        working_directory: working_directory.clone(),
+                        working_directory: working_directory
+                            .clone()
+                            .or_else(|| launch_working_directory(executable_path)),
                     })
                     .map_err(|error| {
                         failed_result(action_id, label, launch_error_message(error), false)
@@ -258,6 +293,7 @@ impl ExecutionService {
                     window_matcher,
                     &previous_handles,
                     Some(launched.process_id),
+                    Some(&resolved_path),
                     *startup_timeout_ms,
                     cancellation,
                 )
@@ -299,7 +335,7 @@ impl ExecutionService {
                 let matcher =
                     browser_window_matcher(*browser_kind, &resolved_executable);
                 let previous_handles = snapshot_handles(inventory);
-                browser_launcher
+                let launched = browser_launcher
                     .launch_browser(
                         *browser_kind,
                         &resolved_executable,
@@ -313,7 +349,8 @@ impl ExecutionService {
                     inventory,
                     &matcher,
                     &previous_handles,
-                    None,
+                    Some(launched.process_id),
+                    Some(&resolved_executable),
                     *startup_timeout_ms,
                     cancellation,
                 )
@@ -445,6 +482,7 @@ mod tests {
                         ..Default::default()
                     },
                     placement: placement(),
+                    captured_placement: None,
                     executable_path: None,
                     reopen_if_absent: false,
                     startup_timeout_ms: 15_000,
@@ -456,6 +494,7 @@ mod tests {
                         ..Default::default()
                     },
                     placement: placement(),
+                    captured_placement: None,
                     executable_path: None,
                     reopen_if_absent: false,
                     startup_timeout_ms: 15_000,

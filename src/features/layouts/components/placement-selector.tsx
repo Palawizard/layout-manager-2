@@ -5,6 +5,7 @@ import type { Monitor } from "../../../lib/tauri/monitors";
 import { listMonitors } from "../../../lib/tauri/monitors";
 import type { WindowState } from "../../../lib/tauri/windows";
 import type { WindowPlacement, PlacementPreset } from "../types/layout";
+import { clonePlacement, placementsMatch } from "../lib/placement-from-window";
 import {
   MIN_CENTER_SCALE,
   applyCenterScale,
@@ -17,6 +18,7 @@ import {
 interface PlacementSelectorProps {
   value: WindowPlacement;
   onChange: (placement: WindowPlacement) => void;
+  capturedPlacement?: WindowPlacement;
 }
 
 const windowStateLabels: Record<WindowState, string> = {
@@ -25,10 +27,28 @@ const windowStateLabels: Record<WindowState, string> = {
   minimized: "Réduit",
 };
 
-export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
+const CAPTURED_PLACEMENT_LABEL = "Position actuelle";
+
+export function PlacementSelector({
+  capturedPlacement,
+  onChange,
+  value,
+}: PlacementSelectorProps) {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
-  const preset = useMemo(() => detectPreset(value), [value]);
+  const isCapturedSelected = useMemo(
+    () => Boolean(capturedPlacement && placementsMatch(value, capturedPlacement)),
+    [capturedPlacement, value],
+  );
+  const preset = useMemo(
+    () => (isCapturedSelected ? null : detectPreset(value)),
+    [isCapturedSelected, value],
+  );
   const centerScalePercent = Math.round((value.centerScale ?? MIN_CENTER_SCALE) * 100);
+  const zoneLabel = isCapturedSelected
+    ? CAPTURED_PLACEMENT_LABEL
+    : preset
+      ? placementPresetLabels[preset]
+      : "Zone personnalisée";
 
   const preferredMonitorId = value.monitorSelector.preferredId;
 
@@ -68,6 +88,13 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
     onChange(applyPlacementPreset(value, item));
   }
 
+  function selectCapturedPlacement() {
+    if (!capturedPlacement) {
+      return;
+    }
+    onChange(clonePlacement(capturedPlacement));
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -97,6 +124,17 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
       <div>
         <Label>Zone</Label>
         <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {capturedPlacement ? (
+            <button
+              className={`rounded-md border px-3 py-2 text-left text-sm ${
+                isCapturedSelected ? "border-primary bg-muted" : "border-border"
+              }`}
+              onClick={selectCapturedPlacement}
+              type="button"
+            >
+              {CAPTURED_PLACEMENT_LABEL}
+            </button>
+          ) : null}
           {standardPlacementPresets.map((item) => (
             <button
               className={`rounded-md border px-3 py-2 text-left text-sm ${
@@ -135,7 +173,7 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
 
       <div className="rounded-md border border-border p-4">
         <p className="mb-3 text-sm font-medium">Aperçu</p>
-        <MonitorPreview monitors={monitors} placement={value} preset={preset} />
+        <MonitorPreview monitors={monitors} placement={value} zoneLabel={zoneLabel} />
       </div>
 
       {preset === "custom" && (
@@ -194,11 +232,11 @@ export function PlacementSelector({ onChange, value }: PlacementSelectorProps) {
 function MonitorPreview({
   monitors,
   placement,
-  preset,
+  zoneLabel,
 }: {
   monitors: Monitor[];
   placement: WindowPlacement;
-  preset: PlacementPreset;
+  zoneLabel: string;
 }) {
   if (monitors.length === 0) {
     return <p className="text-sm text-muted-foreground">Aucun écran détecté.</p>;
@@ -239,7 +277,7 @@ function MonitorPreview({
         />
       ))}
       <div
-        aria-label={`Zone sélectionnée : ${placementPresetLabels[preset]}`}
+        aria-label={`Zone sélectionnée : ${zoneLabel}`}
         className="absolute rounded-sm border-2 border-primary bg-primary/20"
         style={windowStyle}
       />

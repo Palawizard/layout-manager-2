@@ -23,6 +23,16 @@ pub trait MonitorProvider: Send + Sync {
 
 pub trait WindowInventory: Send + Sync {
     fn list_windows(&self) -> Result<Vec<DesktopWindow>, NativeError>;
+
+    /// Includes visible top-level windows that have not received a title yet.
+    /// Used while waiting for a window after launch.
+    fn list_windows_including_untitled(&self) -> Result<Vec<DesktopWindow>, NativeError> {
+        self.list_windows()
+    }
+
+    fn is_process_in_tree(&self, process_id: u32, ancestor_id: u32) -> bool {
+        process_id == ancestor_id
+    }
 }
 
 pub trait WindowController: Send + Sync {

@@ -13,7 +13,10 @@ use crate::{
         ports::LayoutRepository,
     },
     error::AppError,
-    infrastructure::persistence::SqliteLayoutRepository,
+    infrastructure::{
+        persistence::SqliteLayoutRepository,
+        process::{is_windows_executable, recover_launch_executable},
+    },
 };
 
 pub struct LayoutService<'a> {
@@ -31,7 +34,13 @@ impl<'a> LayoutService<'a> {
     }
 
     pub fn get(&self, id: &LayoutId) -> Result<Layout, AppError> {
-        self.repository.get(id)
+        let mut layout = self.repository.get(id)?;
+        layout.actions = layout
+            .actions
+            .into_iter()
+            .map(normalize_saved_action)
+            .collect();
+        Ok(layout)
     }
 
     pub fn save(&self, mut layout: Layout) -> Result<Layout, AppError> {
@@ -40,6 +49,11 @@ impl<'a> LayoutService<'a> {
             layout.created_at = current_timestamp();
         }
         layout.updated_at = current_timestamp();
+        layout.actions = layout
+            .actions
+            .into_iter()
+            .map(normalize_saved_action)
+            .collect();
         layout = layout.normalized()?;
         layout.validate(true)?;
         self.repository.save(&layout)?;
@@ -88,6 +102,38 @@ impl<'a> LayoutService<'a> {
     }
 }
 
+fn normalize_saved_action(action: LayoutAction) -> LayoutAction {
+    match action {
+        LayoutAction::PlaceExistingWindow {
+            id,
+            window_matcher,
+            placement,
+            captured_placement,
+            executable_path: Some(path),
+            reopen_if_absent,
+            startup_timeout_ms,
+        } => {
+            let process_name = window_matcher.process_name.as_deref();
+            let resolved = recover_launch_executable(&path, process_name);
+            let executable_path = if is_windows_executable(std::path::Path::new(&resolved)) {
+                resolved
+            } else {
+                path
+            };
+            LayoutAction::PlaceExistingWindow {
+                id,
+                window_matcher,
+                placement,
+                captured_placement,
+                executable_path: Some(executable_path),
+                reopen_if_absent,
+                startup_timeout_ms,
+            }
+        }
+        other => other,
+    }
+}
+
 fn regenerate_action_id(action: LayoutAction) -> LayoutAction {
     let id = LayoutActionId(Uuid::new_v4().to_string());
     match action {
@@ -113,6 +159,7 @@ fn regenerate_action_id(action: LayoutAction) -> LayoutAction {
         LayoutAction::PlaceExistingWindow {
             window_matcher,
             placement,
+            captured_placement,
             executable_path,
             reopen_if_absent,
             startup_timeout_ms,
@@ -121,6 +168,7 @@ fn regenerate_action_id(action: LayoutAction) -> LayoutAction {
             id,
             window_matcher,
             placement,
+            captured_placement,
             executable_path,
             reopen_if_absent,
             startup_timeout_ms,
@@ -207,6 +255,7 @@ mod tests {
                     state: crate::domain::window::WindowState::Normal,
                     center_scale: None,
                 },
+                captured_placement: None,
                 executable_path: Some("C:\\Windows\\System32\\notepad.exe".to_owned()),
                 reopen_if_absent: true,
                 startup_timeout_ms: 15_000,

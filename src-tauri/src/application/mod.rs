@@ -1,8 +1,13 @@
+pub mod ancillary_panel_title;
+pub mod client_window;
 pub mod durable_window;
 pub mod execution_planner;
 pub mod execution_service;
 pub mod layout_service;
 pub mod placement_executor;
+pub mod post_launch;
+pub mod transient_title;
+pub mod transient_window;
 pub mod unmatched_minimizer;
 pub mod window_discovery_service;
 pub mod window_reuse;

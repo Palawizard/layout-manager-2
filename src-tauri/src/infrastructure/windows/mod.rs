@@ -11,6 +11,7 @@ mod monitors;
 #[cfg(test)]
 mod native_tests;
 mod process;
+mod process_tree;
 
 #[derive(Debug, Default)]
 pub(crate) struct Win32WindowSystem;

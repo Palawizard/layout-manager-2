@@ -250,6 +250,7 @@ fn filter_layout_actions(
         });
     }
     layout.actions.retain(|action| ids.contains(&action.id().0));
+    layout.options.minimize_unmatched_windows = false;
     layout.validate(true).map_err(PublicError::from)?;
     Ok(layout)
 }
@@ -265,5 +266,64 @@ fn plan_error(error: crate::application::execution_planner::PlanError) -> Public
         message,
         field: None,
         retryable: false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::filter_layout_actions;
+    use crate::domain::{
+        geometry::NormalizedBounds,
+        layout::{
+            Layout, LayoutAction, LayoutActionId, LayoutId, LayoutOptions, WindowPlacement,
+        },
+        monitor::{MonitorFallback, MonitorId, MonitorSelector},
+        window::{WindowMatcher, WindowState},
+    };
+
+    fn sample_action(id: &str) -> LayoutAction {
+        LayoutAction::PlaceExistingWindow {
+            id: LayoutActionId(id.to_owned()),
+            window_matcher: WindowMatcher {
+                process_name: Some("editor.exe".to_owned()),
+                ..Default::default()
+            },
+            placement: WindowPlacement {
+                monitor_selector: MonitorSelector {
+                    preferred_id: MonitorId("primary".to_owned()),
+                    fallback: MonitorFallback::Primary,
+                },
+                bounds: NormalizedBounds::new(0.0, 0.0, 1.0, 1.0).expect("bounds"),
+                state: WindowState::Normal,
+                center_scale: None,
+            },
+            captured_placement: None,
+            executable_path: None,
+            reopen_if_absent: false,
+            startup_timeout_ms: 15_000,
+        }
+    }
+
+    #[test]
+    fn partial_retry_disables_minimize_unmatched_windows() {
+        let layout = Layout {
+            id: LayoutId("layout-1".to_owned()),
+            name: "Travail".to_owned(),
+            description: None,
+            actions: vec![sample_action("action-1"), sample_action("action-2")],
+            options: LayoutOptions {
+                minimize_unmatched_windows: true,
+                ..Default::default()
+            },
+            created_at: 0,
+            updated_at: 0,
+        };
+
+        let filtered =
+            filter_layout_actions(layout, Some(vec!["action-2".to_owned()])).expect("filter");
+
+        assert_eq!(filtered.actions.len(), 1);
+        assert_eq!(filtered.actions[0].id().0, "action-2");
+        assert!(!filtered.options.minimize_unmatched_windows);
     }
 }

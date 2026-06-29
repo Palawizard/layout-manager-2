@@ -15,11 +15,21 @@ export function DialogClose(props: ComponentProps<typeof DialogPrimitive.Close>)
   return <DialogPrimitive.Close {...props} />;
 }
 
+interface DialogContentProps extends ComponentProps<typeof DialogPrimitive.Content> {
+  dismissOnEscape?: boolean;
+  dismissOnOutsideClick?: boolean;
+}
+
 export function DialogContent({
   className,
   children,
+  dismissOnEscape = true,
+  dismissOnOutsideClick = true,
+  onEscapeKeyDown,
+  onInteractOutside,
+  onPointerDownOutside,
   ...props
-}: ComponentProps<typeof DialogPrimitive.Content>) {
+}: DialogContentProps) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50" />
@@ -28,6 +38,24 @@ export function DialogContent({
           "fixed left-1/2 top-1/2 z-50 w-[min(32rem,calc(100%-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface p-6 text-surface-foreground shadow-xl",
           className,
         )}
+        onEscapeKeyDown={(event) => {
+          if (!dismissOnEscape) {
+            event.preventDefault();
+          }
+          onEscapeKeyDown?.(event);
+        }}
+        onInteractOutside={(event) => {
+          if (!dismissOnOutsideClick) {
+            event.preventDefault();
+          }
+          onInteractOutside?.(event);
+        }}
+        onPointerDownOutside={(event) => {
+          if (!dismissOnOutsideClick) {
+            event.preventDefault();
+          }
+          onPointerDownOutside?.(event);
+        }}
         {...props}
       >
         {children}
