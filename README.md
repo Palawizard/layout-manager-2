@@ -11,7 +11,7 @@ Application Windows pour enregistrer des layouts, lancer des applications et des
 
 ## How to run
 
-Prérequis : Node.js 22+, pnpm 10, Rust stable, Microsoft C++ Build Tools avec `Desktop development with C++` et Microsoft Edge WebView2.
+Prérequis : Windows 10 ou 11, Node.js 22+, pnpm 10, Rust stable, Microsoft C++ Build Tools avec `Desktop development with C++` et Microsoft Edge WebView2.
 
 ```powershell
 pnpm install
@@ -24,8 +24,10 @@ Vérifier le projet :
 pnpm check
 ```
 
-Créer l’application installable :
+Créer l’installateur Windows :
 
 ```powershell
 pnpm tauri:build
 ```
+
+L’installateur est généré dans `src-tauri/target/release/bundle/`. Les données utilisateur et les journaux sont stockés dans le dossier de données de l’application, accessible depuis les réglages.
