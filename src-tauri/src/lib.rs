@@ -21,6 +21,7 @@ pub fn run() {
             Ok(())
         })
         .manage(infrastructure::windows::Win32WindowSystem::new())
+        .manage(commands::execution::ExecutionRuntime::default())
         .invoke_handler(tauri::generate_handler![
             commands::app_info::get_app_info,
             commands::system::list_monitors,
@@ -31,6 +32,9 @@ pub fn run() {
             commands::layouts::duplicate_layout,
             commands::layouts::delete_layout,
             commands::layouts::validate_executable,
+            commands::execution::list_installed_browsers,
+            commands::execution::run_layout,
+            commands::execution::cancel_layout_run,
             commands::settings::get_settings,
             commands::settings::save_settings,
             commands::settings::open_data_directory

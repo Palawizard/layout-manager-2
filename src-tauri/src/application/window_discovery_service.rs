@@ -34,7 +34,7 @@ impl CancellationCheck for NeverCancelled {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SharedCancellation {
     cancelled: std::sync::atomic::AtomicBool,
 }
@@ -53,15 +53,15 @@ impl SharedCancellation {
     }
 }
 
-impl Default for SharedCancellation {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl CancellationCheck for SharedCancellation {
     fn is_cancelled(&self) -> bool {
         self.cancelled.load(std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
+impl CancellationCheck for std::sync::Arc<SharedCancellation> {
+    fn is_cancelled(&self) -> bool {
+        self.as_ref().is_cancelled()
     }
 }
 
@@ -137,7 +137,6 @@ mod tests {
             Arc,
             atomic::{AtomicBool, Ordering},
         },
-        time::Duration,
     };
     use crate::domain::{
         geometry::PixelBounds,
