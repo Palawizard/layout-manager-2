@@ -78,7 +78,9 @@ export function LayoutEditorPage() {
   const isNew = layoutId === "new";
   const { draft, isDirty, resetDraft, setActions, setDraft, updateDetails } = useEditorStore();
   const [status, setStatus] = useState<"loading" | "ready">(() => (isNew ? "ready" : "loading"));
-  const blocker = useBlocker(isDirty);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingActionIndex, setEditingActionIndex] = useState<number | null>(null);
+  const blocker = useBlocker(isDirty && !isSaving);
   const leaveOpen = blocker.state === "blocked";
 
   useEffect(() => {
@@ -104,6 +106,16 @@ export function LayoutEditorPage() {
     };
   }, [isNew, layoutId, navigate, resetDraft, setDraft]);
 
+  const addAction = useCallback(
+    (kind: LayoutAction["kind"]) => {
+      const newAction = createAction(kind);
+      const nextActions = [...draft.actions, newAction];
+      setActions(nextActions);
+      setEditingActionIndex(nextActions.length - 1);
+    },
+    [draft.actions, setActions],
+  );
+
   const save = useCallback(async () => {
     const parsed = layoutDraftSchema.safeParse({
       name: draft.name,
@@ -115,6 +127,7 @@ export function LayoutEditorPage() {
       toast.error(parsed.error.issues[0]?.message ?? "Le layout est incomplet.");
       return;
     }
+    setIsSaving(true);
     try {
       const saved = await saveLayout({
         ...draft,
@@ -132,6 +145,8 @@ export function LayoutEditorPage() {
           ? String(error.message)
           : "Impossible d’enregistrer ce layout.";
       toast.error(message);
+    } finally {
+      setIsSaving(false);
     }
   }, [draft, isNew, navigate, setDraft]);
 
@@ -178,26 +193,16 @@ export function LayoutEditorPage() {
             <h2 className="font-medium">Actions</h2>
             <div className="flex flex-wrap gap-2">
               <Button
-                onClick={() => setActions([...draft.actions, createAction("launch_application")])}
+                onClick={() => addAction("launch_application")}
                 size="small"
                 variant="secondary"
               >
                 Application
               </Button>
-              <Button
-                onClick={() =>
-                  setActions([...draft.actions, createAction("place_existing_window")])
-                }
-                size="small"
-                variant="secondary"
-              >
+              <Button onClick={() => addAction("place_existing_window")} size="small" variant="secondary">
                 Fenêtre existante
               </Button>
-              <Button
-                onClick={() => setActions([...draft.actions, createAction("open_browser_window")])}
-                size="small"
-                variant="secondary"
-              >
+              <Button onClick={() => addAction("open_browser_window")} size="small" variant="secondary">
                 Navigateur
               </Button>
             </div>
@@ -206,7 +211,12 @@ export function LayoutEditorPage() {
             {draft.actions.length === 0 ? (
               <p className="text-sm text-muted-foreground">Ajoutez au moins une action.</p>
             ) : (
-              <ActionList actions={draft.actions} onChange={setActions} />
+              <ActionList
+                actions={draft.actions}
+                editingIndex={editingActionIndex}
+                onChange={setActions}
+                onEditingIndexChange={setEditingActionIndex}
+              />
             )}
           </CardContent>
         </Card>

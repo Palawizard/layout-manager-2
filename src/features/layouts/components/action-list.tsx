@@ -16,7 +16,9 @@ import { ExistingWindowActionEditor } from "./existing-window-action-editor";
 
 interface ActionListProps {
   actions: LayoutAction[];
+  editingIndex: number | null;
   onChange: (actions: LayoutAction[]) => void;
+  onEditingIndexChange: (index: number | null) => void;
 }
 
 const actionTypeLabels: Record<LayoutAction["kind"], string> = {
@@ -25,8 +27,12 @@ const actionTypeLabels: Record<LayoutAction["kind"], string> = {
   open_browser_window: "Navigateur",
 };
 
-export function ActionList({ actions, onChange }: ActionListProps) {
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+export function ActionList({
+  actions,
+  editingIndex,
+  onChange,
+  onEditingIndexChange,
+}: ActionListProps) {
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
 
   function moveAction(index: number, direction: -1 | 1) {
@@ -80,7 +86,7 @@ export function ActionList({ actions, onChange }: ActionListProps) {
               </Button>
               <Button
                 aria-label="Modifier l’action"
-                onClick={() => setEditingIndex(index)}
+                onClick={() => onEditingIndexChange(index)}
                 size="icon"
                 type="button"
                 variant="ghost"
@@ -101,7 +107,10 @@ export function ActionList({ actions, onChange }: ActionListProps) {
         ))}
       </ul>
 
-      <Dialog onOpenChange={(open) => !open && setEditingIndex(null)} open={editingIndex !== null}>
+      <Dialog
+        onOpenChange={(open) => !open && onEditingIndexChange(null)}
+        open={editingIndex !== null}
+      >
         <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
           <DialogTitle>Modifier l’action</DialogTitle>
           <DialogDescription>Ajustez les paramètres de cette action.</DialogDescription>
@@ -123,6 +132,12 @@ export function ActionList({ actions, onChange }: ActionListProps) {
               onChange={(action) => updateAction(editingIndex, action)}
             />
           )}
+          <div className="mt-6 flex justify-end gap-2">
+            <Button onClick={() => onEditingIndexChange(null)} variant="secondary">
+              Annuler
+            </Button>
+            <Button onClick={() => onEditingIndexChange(null)}>Enregistrer</Button>
+          </div>
         </DialogContent>
       </Dialog>
 
