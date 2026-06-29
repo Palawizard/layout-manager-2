@@ -1,10 +1,15 @@
 mod application;
 mod commands;
 mod domain;
+pub mod error;
 mod infrastructure;
+mod logging;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    logging::initialize();
+    tracing::info!(version = env!("CARGO_PKG_VERSION"), "application starting");
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![commands::app_info::get_app_info])
         .run(tauri::generate_context!())
