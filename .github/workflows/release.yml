@@ -75,7 +75,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Layout Manager 2 — ${{ github.ref_name }}
-          body_path: CHANGELOG.md
+          body_path: .github/release-notes/${{ github.ref_name }}.md
           files: |
             src-tauri/target/release/bundle/**/*
             release-checksums.txt
