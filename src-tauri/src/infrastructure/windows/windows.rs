@@ -11,7 +11,7 @@ use windows::{
     core::BOOL,
 };
 
-use super::{Win32WindowSystem, monitors::monitor_id_from_window};
+use super::{Win32WindowSystem, monitors::monitor_id_from_window, process::process_metadata};
 use crate::domain::{
     geometry::PixelBounds,
     ports::{NativeError, WindowInventory},
@@ -91,11 +91,12 @@ fn inspect_window(window: HWND) -> Option<DesktopWindow> {
     } else {
         WindowState::Normal
     };
+    let (executable_path, process_name) = process_metadata(process_id);
     Some(DesktopWindow {
         handle: NativeWindowHandle(window.0 as isize),
         process_id,
-        executable_path: None,
-        process_name: None,
+        executable_path,
+        process_name,
         title,
         class_name,
         bounds: PixelBounds {

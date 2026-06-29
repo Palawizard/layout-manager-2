@@ -7,6 +7,7 @@ use ::windows::Win32::UI::HiDpi::{
 #[path = "windows.rs"]
 mod inventory;
 mod monitors;
+mod process;
 
 #[derive(Debug, Default)]
 pub(crate) struct Win32WindowSystem;
