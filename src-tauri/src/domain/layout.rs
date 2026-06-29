@@ -274,13 +274,15 @@ pub fn validate_url(url: &str) -> Result<(), AppError> {
             "L’adresse web est requise.".to_owned(),
         ));
     }
-    let lower = trimmed.to_ascii_lowercase();
-    if !lower.starts_with("https://") && !lower.starts_with("http://") {
-        return Err(AppError::Validation(
+    let parsed = url::Url::parse(trimmed).map_err(|_| {
+        AppError::Validation("L’adresse web est invalide.".to_owned())
+    })?;
+    match parsed.scheme() {
+        "http" | "https" => Ok(()),
+        _ => Err(AppError::Validation(
             "L’adresse web doit commencer par http:// ou https://.".to_owned(),
-        ));
+        )),
     }
-    Ok(())
 }
 
 fn validate_arguments(arguments: &[String]) -> Result<(), AppError> {
