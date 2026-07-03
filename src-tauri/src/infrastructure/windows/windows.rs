@@ -115,6 +115,13 @@ fn inspect_window(window: HWND, include_untitled: bool) -> Option<DesktopWindow>
         width: rect.right - rect.left,
         height: rect.bottom - rect.top,
     };
+    let state = if unsafe { IsIconic(window) }.as_bool() {
+        WindowState::Minimized
+    } else if unsafe { IsZoomed(window) }.as_bool() {
+        WindowState::Maximized
+    } else {
+        WindowState::Normal
+    };
     if is_auxiliary_window(&DesktopWindow {
         handle: NativeWindowHandle(window.0 as isize),
         process_id,
@@ -123,19 +130,12 @@ fn inspect_window(window: HWND, include_untitled: bool) -> Option<DesktopWindow>
         title: title.clone(),
         class_name: class_name.clone(),
         bounds,
-        state: WindowState::Normal,
+        state,
         monitor_id: None,
     }) || has_ancillary_panel_title(&title)
     {
         return None;
     }
-    let state = if unsafe { IsIconic(window) }.as_bool() {
-        WindowState::Minimized
-    } else if unsafe { IsZoomed(window) }.as_bool() {
-        WindowState::Maximized
-    } else {
-        WindowState::Normal
-    };
     let (executable_path, process_name) = process_metadata(process_id);
     Some(DesktopWindow {
         handle: NativeWindowHandle(window.0 as isize),
@@ -155,12 +155,17 @@ const WS_EX_TOOLWINDOW: isize = 0x0000_0080;
 
 fn is_enumerable_top_level_window(window: HWND) -> bool {
     // SAFETY: The handle came from EnumWindows and each query is read-only.
-    if !unsafe { IsWindowVisible(window) }.as_bool() {
-        return false;
-    }
+    let is_visible = unsafe { IsWindowVisible(window) }.as_bool();
+    // Some applications hide their top-level window while Windows still reports it as minimized.
+    let is_minimized = unsafe { IsIconic(window) }.as_bool();
     // SAFETY: The handle came from EnumWindows and GWL_EXSTYLE is a valid index here.
     let extended_style = unsafe { GetWindowLongPtrW(window, GWL_EXSTYLE) };
-    !(extended_style & WS_EX_TOOLWINDOW != 0 && extended_style & WS_EX_APPWINDOW == 0)
+    is_enumerable_window_style(is_visible, is_minimized, extended_style)
+}
+
+fn is_enumerable_window_style(is_visible: bool, is_minimized: bool, extended_style: isize) -> bool {
+    (is_visible || is_minimized)
+        && !(extended_style & WS_EX_TOOLWINDOW != 0 && extended_style & WS_EX_APPWINDOW == 0)
 }
 
 fn window_text(window: HWND) -> String {
@@ -180,4 +185,29 @@ fn window_class(window: HWND) -> String {
     // SAFETY: The buffer is writable and its length is supplied to Windows.
     let copied = unsafe { GetClassNameW(window, &mut buffer) };
     String::from_utf16_lossy(&buffer[..copied.max(0) as usize])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{WS_EX_APPWINDOW, WS_EX_TOOLWINDOW, is_enumerable_window_style};
+
+    #[test]
+    fn includes_hidden_minimized_application_windows() {
+        assert!(is_enumerable_window_style(false, true, 0));
+    }
+
+    #[test]
+    fn excludes_hidden_windows_that_are_not_minimized() {
+        assert!(!is_enumerable_window_style(false, false, 0));
+    }
+
+    #[test]
+    fn excludes_minimized_tool_windows_without_app_window_style() {
+        assert!(!is_enumerable_window_style(false, true, WS_EX_TOOLWINDOW));
+        assert!(is_enumerable_window_style(
+            false,
+            true,
+            WS_EX_TOOLWINDOW | WS_EX_APPWINDOW
+        ));
+    }
 }

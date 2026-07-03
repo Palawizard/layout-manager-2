@@ -1,6 +1,6 @@
 use crate::{
     application::{transient_window::is_transient_window, window_matcher::MatchContext},
-    domain::window::{DesktopWindow, WindowMatcher},
+    domain::window::{DesktopWindow, WindowMatcher, WindowState},
 };
 
 pub const SUSPECT_LAUNCH_WIDTH: i32 = 480;
@@ -16,7 +16,8 @@ pub fn window_area(window: &DesktopWindow) -> i64 {
 /// Strip panels and tool surfaces too small to be a main application window.
 #[must_use]
 pub fn is_auxiliary_window(window: &DesktopWindow) -> bool {
-    window.bounds.width < MIN_CLIENT_WIDTH || window.bounds.height < MIN_CLIENT_HEIGHT
+    window.state != WindowState::Minimized
+        && (window.bounds.width < MIN_CLIENT_WIDTH || window.bounds.height < MIN_CLIENT_HEIGHT)
 }
 
 /// Soft signal after a launch: a new, small window may be replaced by the main window.
@@ -171,5 +172,13 @@ mod tests {
         assert!(super::is_auxiliary_window(&contacts));
         let main = window("Steam", 1280, 696);
         assert!(!super::is_auxiliary_window(&main));
+    }
+
+    #[test]
+    fn keeps_minimized_windows_with_icon_sized_bounds() {
+        let mut minimized = window("Friends - Discord", 160, 28);
+        minimized.state = WindowState::Minimized;
+
+        assert!(!super::is_auxiliary_window(&minimized));
     }
 }

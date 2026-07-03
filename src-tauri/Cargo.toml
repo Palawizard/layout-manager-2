@@ -1,6 +1,6 @@
 [package]
 name = "layout-manager-2"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 description = "Windows workspace layout manager"
 authors = ["Layout Manager 2 contributors"]
 edition = "2024"
@@ -20,6 +20,8 @@ serde_json = "1.0.150"
 tauri = { version = "2.11.3", features = [] }
 tauri-plugin-dialog = "2.7.1"
 tauri-plugin-opener = "2.5.4"
+tauri-plugin-process = "2.3.1"
+tauri-plugin-updater = "2.10.1"
 thiserror = "2.0.18"
 tracing = "0.1.44"
 tracing-appender = "0.2.5"

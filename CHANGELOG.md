@@ -4,6 +4,17 @@ Toutes les évolutions notables du projet sont consignées dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le versionnement suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.1.0-beta.2] - 2026-07-03
+
+### Ajouté
+
+- Vérification automatique des nouvelles versions publiées sur GitHub Releases.
+- Installation des mises à jour signées depuis l’application avec progression et redémarrage.
+
+### Corrigé
+
+- Détection et restauration des fenêtres réduites lors de l’exécution d’un layout, notamment Discord.
+
 ## [0.1.0-beta.1] - 2026-06-29
 
 Première version bêta publique du MVP Layout Manager 2.
@@ -28,4 +39,5 @@ Première version bêta publique du MVP Layout Manager 2.
 - Le navigateur système par défaut ne garantit pas toujours une nouvelle fenêtre distincte.
 - Pas de synchronisation cloud, import/export, bureaux virtuels ni déclencheurs automatiques.
 
+[0.1.0-beta.2]: https://github.com/Palawizard/layout-manager-2/compare/v0.1.0-beta.1...v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/Palawizard/layout-manager-2/releases/tag/v0.1.0-beta.1
