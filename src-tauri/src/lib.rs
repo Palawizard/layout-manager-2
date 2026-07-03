@@ -12,6 +12,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             logging::initialize(app.handle()).expect("failed to initialize logging");
             tracing::info!(version = env!("CARGO_PKG_VERSION"), "application starting");

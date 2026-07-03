@@ -42,6 +42,7 @@
 - **Placement Win32** : déplacement, redimensionnement et état final (normal, agrandi, réduit)
 - **Navigateurs** : Edge, Chrome, Firefox et navigateur système (fallback limité)
 - **Progression en direct** : statut par action, annulation et rapport partiel
+- **Mises à jour automatiques** : détection et installation signée depuis GitHub Releases
 - **Réduction optionnelle** : minimise les fenêtres hors layout en dernière phase
 
 </td>
@@ -246,6 +247,7 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 - Chemins, arguments et URL **validés côté Rust** avant exécution
 - Aucun handle Windows (`HWND`) **persisté** en base
 - Journaux avec **rotation** ; pas d'URL complètes ni d'arguments sensibles par défaut
+- Mises à jour vérifiées avec une **signature cryptographique** avant installation
 - Installateur en mode **utilisateur courant** — pas d'élévation admin par défaut
 
 ---

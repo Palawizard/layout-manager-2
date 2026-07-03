@@ -49,8 +49,31 @@ jobs:
       - name: Run quality checks
         run: pnpm check
 
-      - name: Build Windows artifacts
-        run: pnpm tauri:build
+      - name: Load release notes
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          "RELEASE_BODY<<EOF" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Get-Content -Raw ".github/release-notes/$env:GITHUB_REF_NAME.md" |
+            Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "EOF" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build and publish Windows artifacts
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: Layout Manager 2 — ${{ github.ref_name }}
+          releaseBody: ${{ env.RELEASE_BODY }}
+          releaseDraft: false
+          prerelease: false
+          uploadUpdaterJson: true
+          uploadUpdaterSignatures: true
+          updaterJsonPreferNsis: true
+          args: --bundles nsis
 
       - name: Generate checksums
         shell: pwsh
@@ -69,15 +92,8 @@ jobs:
             src-tauri/target/release/bundle/**/*
             release-checksums.txt
 
-      - name: Publish GitHub Release
+      - name: Upload checksums to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Layout Manager 2 — ${{ github.ref_name }}
-          body_path: .github/release-notes/${{ github.ref_name }}.md
-          files: |
-            src-tauri/target/release/bundle/**/*
-            release-checksums.txt
-          prerelease: false
-          draft: false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload $env:GITHUB_REF_NAME release-checksums.txt --clobber

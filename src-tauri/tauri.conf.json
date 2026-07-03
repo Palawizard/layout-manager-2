@@ -25,6 +25,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "category": "Productivity",
     "copyright": "Layout Manager 2 contributors",
     "shortDescription": "Organisez et appliquez vos espaces de travail Windows.",
@@ -44,6 +45,17 @@
       "nsis": {
         "installMode": "currentUser",
         "displayLanguageSelector": false
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEExNzM3MTY1OUEyNzNDMEMKUldRTVBDZWFaWEZ6b2VnbTBIQ1YzN1JyOW9tRFQ2R3BlN0tEU0pvdUVKbndEVUYrbUIwNVo5UEkK",
+      "endpoints": [
+        "https://github.com/Palawizard/layout-manager-2/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }
