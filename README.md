@@ -94,7 +94,7 @@ Les releases sont publiées sur [GitHub Releases](https://github.com/Palawizard/
 
 | Fichier                            | Description                                     |
 | ---------------------------------- | ----------------------------------------------- |
-| `Layout Manager 2_*_x64-setup.exe` | Installateur NSIS Windows (utilisateur courant) |
+| `Layout.Manager.2_*_x64-setup.exe` | Installateur NSIS Windows (utilisateur courant) |
 | `release-checksums.txt`            | Empreintes SHA-256 des artefacts                |
 
 **Prérequis runtime** : Microsoft Edge WebView2 (installé automatiquement par l'installateur si nécessaire).
