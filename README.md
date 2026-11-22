@@ -15,8 +15,6 @@
 
 </div>
 
----
-
 ## Fonctionnalités
 
 <table>
@@ -25,25 +23,25 @@
 
 ### Layouts
 
-- **Création et édition** : nom, description et liste ordonnée d'actions
-- **Duplication et suppression** : copies indépendantes avec confirmation
-- **Persistance locale** : SQLite dans le dossier de données utilisateur
-- **Trois types d'actions** : application, fenêtre existante, fenêtre navigateur
-- **Presets de placement** : plein écran, moitiés, quarts, zone centrée, personnalisée
-- **Aperçu multi-écrans** : sélection visuelle avec support des coordonnées négatives
+- Création et édition : nom, description et liste ordonnée d'actions
+- Duplication et suppression : copies indépendantes avec confirmation
+- Persistance locale : SQLite dans le dossier de données utilisateur
+- Trois types d'actions : application, fenêtre existante, fenêtre navigateur
+- Presets de placement : plein écran, moitiés, quarts, zone centrée, personnalisée
+- Aperçu multi-écrans : sélection visuelle avec support des coordonnées négatives
 
 </td>
 <td width="50%">
 
 ### Exécution
 
-- **Lancement d'applications** : exécutable, arguments et répertoire de travail
-- **Réutilisation intelligente** : évite les doublons si une fenêtre compatible existe
-- **Placement Win32** : déplacement, redimensionnement et état final (normal, agrandi, réduit)
-- **Navigateurs** : Edge, Chrome, Firefox et navigateur système (fallback limité)
-- **Progression en direct** : statut par action, annulation et rapport partiel
-- **Mises à jour automatiques** : détection et installation signée depuis GitHub Releases
-- **Réduction optionnelle** : minimise les fenêtres hors layout en dernière phase
+- Lancement d'applications : exécutable, arguments et répertoire de travail
+- Réutilisation intelligente : évite les doublons si une fenêtre compatible existe
+- Placement Win32 : déplacement, redimensionnement et état final (normal, agrandi, réduit)
+- Navigateurs : Edge, Chrome, Firefox et navigateur système (fallback limité)
+- Progression en direct : statut par action, annulation et rapport partiel
+- Mises à jour automatiques : détection et installation signée depuis GitHub Releases
+- Réduction optionnelle : minimise les fenêtres hors layout en dernière phase
 
 </td>
 </tr>
@@ -52,22 +50,22 @@
 
 ### Fenêtres et écrans
 
-- **Inventaire de bureau** : liste filtrée des fenêtres utiles (sans bruit système)
-- **Matching déterministe** : exécutable, processus, classe, titre (regex) et index
-- **Multi-écrans et DPI** : bounds normalisés, fallback d'écran et clamp dans la zone de travail
-- **Sélecteur intégré** : recherche, rafraîchissement et matcher stable (jamais de handle persisté)
-- **Timeouts bornés** : attente annulable pour les applications lentes
+- Inventaire de bureau : liste filtrée des fenêtres utiles (sans bruit système)
+- Matching déterministe : exécutable, processus, classe, titre (regex) et index
+- Multi-écrans et DPI : bounds normalisés, fallback d'écran et clamp dans la zone de travail
+- Sélecteur intégré : recherche, rafraîchissement et matcher stable (jamais de handle persisté)
+- Timeouts bornés : attente annulable pour les applications lentes
 
 </td>
 <td>
 
 ### Expérience
 
-- **Interface en français** : navigation `Layouts` et `Réglages`
-- **Thème clair / sombre** : suit les préférences système
-- **Réglages persistants** : navigateur préféré, délais et stratégie de fallback
-- **Diagnostics** : journaux locaux avec rotation, dossiers données et journaux accessibles
-- **Hors ligne** : aucun compte, cloud ni télémétrie
+- Interface en français : navigation `Layouts` et `Réglages`
+- Thème clair / sombre : suit les préférences système
+- Réglages persistants : navigateur préféré, délais et stratégie de fallback
+- Diagnostics : journaux locaux avec rotation, dossiers données et journaux accessibles
+- Hors ligne : aucun compte, cloud ni télémétrie
 
 </td>
 </tr>
@@ -86,8 +84,6 @@
 </tr>
 </table>
 
----
-
 ## Téléchargement
 
 Les releases sont publiées sur [GitHub Releases](https://github.com/Palawizard/layout-manager-2/releases).
@@ -98,8 +94,6 @@ Les releases sont publiées sur [GitHub Releases](https://github.com/Palawizard/
 | `release-checksums.txt`            | Empreintes SHA-256 des artefacts                |
 
 **Prérequis runtime** : Microsoft Edge WebView2 (installé automatiquement par l'installateur si nécessaire).
-
----
 
 ## Démarrage rapide
 
@@ -144,8 +138,6 @@ L'installateur est généré dans `src-tauri/target/release/bundle/`.
 
 Layouts, réglages et base SQLite sont stockés dans le dossier de données de l'application Tauri, accessible depuis **Réglages** → **Ouvrir le dossier des données**.
 
----
-
 ## Scripts utiles
 
 <div align="center">
@@ -161,8 +153,6 @@ Layouts, réglages et base SQLite sont stockés dans le dossier de données de l
 | `pnpm rust:test`   | Tests Rust backend                     |
 
 </div>
-
----
 
 ## Architecture
 
@@ -197,8 +187,6 @@ Validation → Snapshot fenêtres → Lancement (apps + navigateurs)
 
 Le frontend communique uniquement via des commandes Tauri typées. Aucun accès direct à Win32 ou SQLite depuis l'interface.
 
----
-
 ## Stack technique
 
 <div align="center">
@@ -223,8 +211,6 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 - → Interface web rapide à itérer sans embarquer Chromium complet
 - → Installateur léger et permissions Tauri minimales
 
----
-
 ## Commandes Tauri exposées
 
 | Domaine     | Commandes                                                                                   |
@@ -238,8 +224,6 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 
 Événements de progression : `layout-run://started`, `layout-run://action-started`, `layout-run://action-completed`, `layout-run://completed`.
 
----
-
 ## Sécurité et confidentialité
 
 - Application **locale** : pas de télémétrie ni de compte dans le MVP
@@ -249,8 +233,6 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 - Journaux avec **rotation** ; pas d'URL complètes ni d'arguments sensibles par défaut
 - Mises à jour vérifiées avec une **signature cryptographique** avant installation
 - Installateur en mode **utilisateur courant**, pas d'élévation admin par défaut
-
----
 
 ## Vérification
 
@@ -267,8 +249,6 @@ pnpm test:e2e
 
 > Le placement réel sur le bureau et l'installateur sur machine vierge doivent être validés manuellement.
 
----
-
 ## Contribution et release
 
 - Branche d'intégration : `dev`
@@ -276,13 +256,9 @@ pnpm test:e2e
 - Releases : tag `v*` sur `main` déclenche le workflow GitHub Actions
 - Changelog : voir [CHANGELOG.md](CHANGELOG.md)
 
----
-
 ## Licence
 
 Distribué sous licence [MIT](LICENSE).
-
----
 
 <div align="center">
 
