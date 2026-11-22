@@ -11,72 +11,70 @@
 [![License](https://img.shields.io/badge/Licence-MIT-green?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/Plateforme-Windows_10%2F11-0078D4?style=for-the-badge&logo=windows)](https://www.microsoft.com/windows)
 
-[Fonctionnalités](#-fonctionnalités) • [Téléchargement](#-téléchargement) • [Démarrage rapide](#-démarrage-rapide) • [Architecture](#-architecture) • [Vérification](#-vérification)
+[Fonctionnalités](#fonctionnalités) • [Téléchargement](#téléchargement) • [Démarrage rapide](#démarrage-rapide) • [Architecture](#architecture) • [Vérification](#vérification)
 
 </div>
 
----
-
-## ◆ Fonctionnalités
+## Fonctionnalités
 
 <table>
 <tr>
 <td width="50%">
 
-### » Layouts
+### Layouts
 
-- **Création et édition** : nom, description et liste ordonnée d'actions
-- **Duplication et suppression** : copies indépendantes avec confirmation
-- **Persistance locale** : SQLite dans le dossier de données utilisateur
-- **Trois types d'actions** : application, fenêtre existante, fenêtre navigateur
-- **Presets de placement** : plein écran, moitiés, quarts, zone centrée, personnalisée
-- **Aperçu multi-écrans** : sélection visuelle avec support des coordonnées négatives
+- Création et édition : nom, description et liste ordonnée d'actions
+- Duplication et suppression : copies indépendantes avec confirmation
+- Persistance locale : SQLite dans le dossier de données utilisateur
+- Trois types d'actions : application, fenêtre existante, fenêtre navigateur
+- Presets de placement : plein écran, moitiés, quarts, zone centrée, personnalisée
+- Aperçu multi-écrans : sélection visuelle avec support des coordonnées négatives
 
 </td>
 <td width="50%">
 
-### » Exécution
+### Exécution
 
-- **Lancement d'applications** : exécutable, arguments et répertoire de travail
-- **Réutilisation intelligente** : évite les doublons si une fenêtre compatible existe
-- **Placement Win32** : déplacement, redimensionnement et état final (normal, agrandi, réduit)
-- **Navigateurs** : Edge, Chrome, Firefox et navigateur système (fallback limité)
-- **Progression en direct** : statut par action, annulation et rapport partiel
-- **Mises à jour automatiques** : détection et installation signée depuis GitHub Releases
-- **Réduction optionnelle** : minimise les fenêtres hors layout en dernière phase
+- Lancement d'applications : exécutable, arguments et répertoire de travail
+- Réutilisation intelligente : évite les doublons si une fenêtre compatible existe
+- Placement Win32 : déplacement, redimensionnement et état final (normal, agrandi, réduit)
+- Navigateurs : Edge, Chrome, Firefox et navigateur système (fallback limité)
+- Progression en direct : statut par action, annulation et rapport partiel
+- Mises à jour automatiques : détection et installation signée depuis GitHub Releases
+- Réduction optionnelle : minimise les fenêtres hors layout en dernière phase
 
 </td>
 </tr>
 <tr>
 <td>
 
-### » Fenêtres et écrans
+### Fenêtres et écrans
 
-- **Inventaire de bureau** : liste filtrée des fenêtres utiles (sans bruit système)
-- **Matching déterministe** : exécutable, processus, classe, titre (regex) et index
-- **Multi-écrans et DPI** : bounds normalisés, fallback d'écran et clamp dans la zone de travail
-- **Sélecteur intégré** : recherche, rafraîchissement et matcher stable (jamais de handle persisté)
-- **Timeouts bornés** : attente annulable pour les applications lentes
+- Inventaire de bureau : liste filtrée des fenêtres utiles (sans bruit système)
+- Matching déterministe : exécutable, processus, classe, titre (regex) et index
+- Multi-écrans et DPI : bounds normalisés, fallback d'écran et clamp dans la zone de travail
+- Sélecteur intégré : recherche, rafraîchissement et matcher stable (jamais de handle persisté)
+- Timeouts bornés : attente annulable pour les applications lentes
 
 </td>
 <td>
 
-### » Expérience
+### Expérience
 
-- **Interface en français** : navigation `Layouts` et `Réglages`
-- **Thème clair / sombre** : suit les préférences système
-- **Réglages persistants** : navigateur préféré, délais et stratégie de fallback
-- **Diagnostics** : journaux locaux avec rotation, dossiers données et journaux accessibles
-- **Hors ligne** : aucun compte, cloud ni télémétrie
+- Interface en français : navigation `Layouts` et `Réglages`
+- Thème clair / sombre : suit les préférences système
+- Réglages persistants : navigateur préféré, délais et stratégie de fallback
+- Diagnostics : journaux locaux avec rotation, dossiers données et journaux accessibles
+- Hors ligne : aucun compte, cloud ni télémétrie
 
 </td>
 </tr>
 <tr>
 <td colspan="2">
 
-### » Limites connues (beta)
+### Limites connues (beta)
 
-- Windows 10 et 11 uniquement — pas de macOS ni Linux
+- Windows 10 et 11 uniquement, pas de macOS ni Linux
 - Installateur **non signé** : SmartScreen peut demander une confirmation supplémentaire
 - Applications **élevées** (admin) non contrôlables par une app standard
 - Navigateur système par défaut : ouverture possible sans garantie de nouvelle fenêtre distincte
@@ -86,9 +84,7 @@
 </tr>
 </table>
 
----
-
-## ◆ Téléchargement
+## Téléchargement
 
 Les releases sont publiées sur [GitHub Releases](https://github.com/Palawizard/layout-manager-2/releases).
 
@@ -99,9 +95,7 @@ Les releases sont publiées sur [GitHub Releases](https://github.com/Palawizard/
 
 **Prérequis runtime** : Microsoft Edge WebView2 (installé automatiquement par l'installateur si nécessaire).
 
----
-
-## ▶ Démarrage rapide
+## Démarrage rapide
 
 ### Prérequis (développement)
 
@@ -144,9 +138,7 @@ L'installateur est généré dans `src-tauri/target/release/bundle/`.
 
 Layouts, réglages et base SQLite sont stockés dans le dossier de données de l'application Tauri, accessible depuis **Réglages** → **Ouvrir le dossier des données**.
 
----
-
-## ◆ Scripts utiles
+## Scripts utiles
 
 <div align="center">
 
@@ -162,9 +154,7 @@ Layouts, réglages et base SQLite sont stockés dans le dossier de données de l
 
 </div>
 
----
-
-## ◆ Architecture
+## Architecture
 
 ```
 layout-manager-2/
@@ -197,9 +187,7 @@ Validation → Snapshot fenêtres → Lancement (apps + navigateurs)
 
 Le frontend communique uniquement via des commandes Tauri typées. Aucun accès direct à Win32 ou SQLite depuis l'interface.
 
----
-
-## ◆ Stack technique
+## Stack technique
 
 <div align="center">
 
@@ -223,9 +211,7 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 - → Interface web rapide à itérer sans embarquer Chromium complet
 - → Installateur léger et permissions Tauri minimales
 
----
-
-## ◆ Commandes Tauri exposées
+## Commandes Tauri exposées
 
 | Domaine     | Commandes                                                                                   |
 | ----------- | ------------------------------------------------------------------------------------------- |
@@ -238,9 +224,7 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 
 Événements de progression : `layout-run://started`, `layout-run://action-started`, `layout-run://action-completed`, `layout-run://completed`.
 
----
-
-## ◆ Sécurité et confidentialité
+## Sécurité et confidentialité
 
 - Application **locale** : pas de télémétrie ni de compte dans le MVP
 - Capacités Tauri **minimales** ; pas de shell générique exposé au frontend
@@ -248,11 +232,9 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 - Aucun handle Windows (`HWND`) **persisté** en base
 - Journaux avec **rotation** ; pas d'URL complètes ni d'arguments sensibles par défaut
 - Mises à jour vérifiées avec une **signature cryptographique** avant installation
-- Installateur en mode **utilisateur courant** — pas d'élévation admin par défaut
+- Installateur en mode **utilisateur courant**, pas d'élévation admin par défaut
 
----
-
-## ◆ Vérification
+## Vérification
 
 ```powershell
 # Suite complète (recommandé avant contribution)
@@ -267,22 +249,16 @@ pnpm test:e2e
 
 > Le placement réel sur le bureau et l'installateur sur machine vierge doivent être validés manuellement.
 
----
-
-## ◆ Contribution et release
+## Contribution et release
 
 - Branche d'intégration : `dev`
 - Commits : `type(scope): thing done` (anglais, sans body)
 - Releases : tag `v*` sur `main` déclenche le workflow GitHub Actions
 - Changelog : voir [CHANGELOG.md](CHANGELOG.md)
 
----
-
-## ◆ Licence
+## Licence
 
 Distribué sous licence [MIT](LICENSE).
-
----
 
 <div align="center">
 
