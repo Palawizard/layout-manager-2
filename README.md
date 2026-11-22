@@ -11,19 +11,19 @@
 [![License](https://img.shields.io/badge/Licence-MIT-green?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/Plateforme-Windows_10%2F11-0078D4?style=for-the-badge&logo=windows)](https://www.microsoft.com/windows)
 
-[Fonctionnalités](#-fonctionnalités) • [Téléchargement](#-téléchargement) • [Démarrage rapide](#-démarrage-rapide) • [Architecture](#-architecture) • [Vérification](#-vérification)
+[Fonctionnalités](#fonctionnalités) • [Téléchargement](#téléchargement) • [Démarrage rapide](#démarrage-rapide) • [Architecture](#architecture) • [Vérification](#vérification)
 
 </div>
 
 ---
 
-## ◆ Fonctionnalités
+## Fonctionnalités
 
 <table>
 <tr>
 <td width="50%">
 
-### » Layouts
+### Layouts
 
 - **Création et édition** : nom, description et liste ordonnée d'actions
 - **Duplication et suppression** : copies indépendantes avec confirmation
@@ -35,7 +35,7 @@
 </td>
 <td width="50%">
 
-### » Exécution
+### Exécution
 
 - **Lancement d'applications** : exécutable, arguments et répertoire de travail
 - **Réutilisation intelligente** : évite les doublons si une fenêtre compatible existe
@@ -50,7 +50,7 @@
 <tr>
 <td>
 
-### » Fenêtres et écrans
+### Fenêtres et écrans
 
 - **Inventaire de bureau** : liste filtrée des fenêtres utiles (sans bruit système)
 - **Matching déterministe** : exécutable, processus, classe, titre (regex) et index
@@ -61,7 +61,7 @@
 </td>
 <td>
 
-### » Expérience
+### Expérience
 
 - **Interface en français** : navigation `Layouts` et `Réglages`
 - **Thème clair / sombre** : suit les préférences système
@@ -74,9 +74,9 @@
 <tr>
 <td colspan="2">
 
-### » Limites connues (beta)
+### Limites connues (beta)
 
-- Windows 10 et 11 uniquement — pas de macOS ni Linux
+- Windows 10 et 11 uniquement, pas de macOS ni Linux
 - Installateur **non signé** : SmartScreen peut demander une confirmation supplémentaire
 - Applications **élevées** (admin) non contrôlables par une app standard
 - Navigateur système par défaut : ouverture possible sans garantie de nouvelle fenêtre distincte
@@ -88,7 +88,7 @@
 
 ---
 
-## ◆ Téléchargement
+## Téléchargement
 
 Les releases sont publiées sur [GitHub Releases](https://github.com/Palawizard/layout-manager-2/releases).
 
@@ -101,7 +101,7 @@ Les releases sont publiées sur [GitHub Releases](https://github.com/Palawizard/
 
 ---
 
-## ▶ Démarrage rapide
+## Démarrage rapide
 
 ### Prérequis (développement)
 
@@ -146,7 +146,7 @@ Layouts, réglages et base SQLite sont stockés dans le dossier de données de l
 
 ---
 
-## ◆ Scripts utiles
+## Scripts utiles
 
 <div align="center">
 
@@ -164,7 +164,7 @@ Layouts, réglages et base SQLite sont stockés dans le dossier de données de l
 
 ---
 
-## ◆ Architecture
+## Architecture
 
 ```
 layout-manager-2/
@@ -199,7 +199,7 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 
 ---
 
-## ◆ Stack technique
+## Stack technique
 
 <div align="center">
 
@@ -225,7 +225,7 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 
 ---
 
-## ◆ Commandes Tauri exposées
+## Commandes Tauri exposées
 
 | Domaine     | Commandes                                                                                   |
 | ----------- | ------------------------------------------------------------------------------------------- |
@@ -240,7 +240,7 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 
 ---
 
-## ◆ Sécurité et confidentialité
+## Sécurité et confidentialité
 
 - Application **locale** : pas de télémétrie ni de compte dans le MVP
 - Capacités Tauri **minimales** ; pas de shell générique exposé au frontend
@@ -248,11 +248,11 @@ Le frontend communique uniquement via des commandes Tauri typées. Aucun accès 
 - Aucun handle Windows (`HWND`) **persisté** en base
 - Journaux avec **rotation** ; pas d'URL complètes ni d'arguments sensibles par défaut
 - Mises à jour vérifiées avec une **signature cryptographique** avant installation
-- Installateur en mode **utilisateur courant** — pas d'élévation admin par défaut
+- Installateur en mode **utilisateur courant**, pas d'élévation admin par défaut
 
 ---
 
-## ◆ Vérification
+## Vérification
 
 ```powershell
 # Suite complète (recommandé avant contribution)
@@ -269,7 +269,7 @@ pnpm test:e2e
 
 ---
 
-## ◆ Contribution et release
+## Contribution et release
 
 - Branche d'intégration : `dev`
 - Commits : `type(scope): thing done` (anglais, sans body)
@@ -278,7 +278,7 @@ pnpm test:e2e
 
 ---
 
-## ◆ Licence
+## Licence
 
 Distribué sous licence [MIT](LICENSE).
 
