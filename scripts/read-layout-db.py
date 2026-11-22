@@ -1,8 +1,9 @@
 import sqlite3
 import json
+import os
 import sys
 
-db = sys.argv[1] if len(sys.argv) > 1 else r"C:\Users\super\AppData\Roaming\com.layoutmanager2.app\layout-manager-2.sqlite"
+db = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.environ["APPDATA"], "com.layoutmanager2.app", "layout-manager-2.sqlite")
 name_filter = sys.argv[2] if len(sys.argv) > 2 else "%Palawi%"
 
 conn = sqlite3.connect(db)
